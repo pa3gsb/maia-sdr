@@ -326,7 +326,7 @@ class MaiaSDR(Elaboratable):
                 self.sdr_registers['spectrometer']['peak_detect']),
             self.sdr_registers['spectrometer']['last_buffer'].eq(
                 self.spectrometer.last_buffer),
-            self.fft_out.eq(self.spectrometer.interrupt_out),
+            self.fft_out.eq(self.spectrometer.end_fft),
             self.spectrometer.fastlock_profile.eq(self.fastlock_profile),
         ]
 

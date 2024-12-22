@@ -17,11 +17,13 @@ module sweeper_it (
             profile_o <= 0;
         end else begin
             count <= count + 1;
-            gpio_o <= count << 9;
-            profile_o <= count;
+            gpio_o <= (count + 1) << 9;
+            profile_o <= count ;
         end
         
     end
 
 endmodule
 
+// https://ez.analog.com/rf/wide-band-rf-transceivers/design-support/w/documents/10057/ad936x-documentation-changes
+// CTRK_IN1 to CLK_IN3 is used : meaning <<9 instead of 8

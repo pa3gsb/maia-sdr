@@ -88,6 +88,7 @@ class Spectrometer(Elaboratable):
         self.last_buffer = Signal(dma_buffers_log2)
 
         self.interrupt_out = Signal()
+        self.end_fft = Signal()
         self.fastlock_profile = Signal(3)
 
     def ports(self):
@@ -101,6 +102,7 @@ class Spectrometer(Elaboratable):
             self.last_buffer,
             self.interrupt_out,
             self.fastlock_profile,
+            self.end_fft,
         ]
 
     def elaborate(self, platform):
@@ -158,10 +160,13 @@ class Spectrometer(Elaboratable):
             dma.rdata.eq(dma_rdata),
             dma.start.eq(integrator.done),
             self.last_buffer.eq(dma.last_buffer),
-
+   #         self.end_fft.eq(integrator.done), 
+            self.end_fft.eq(integrator.nearly_end), 
             self.interrupt_out.eq(~dma.busy & dma_busy_q),
             
         ]
+
+        
         return m
 
 

@@ -121,6 +121,7 @@ class SpectrumIntegrator(Elaboratable):
         self.rdata_value = Signal(self.sumw)
         self.rdata_exponent = Signal(self.ew)
         self.rden = Signal()
+        self.nearly_end = Signal()
 
     @property
     def model_vlen(self, nint):
@@ -214,6 +215,7 @@ class SpectrumIntegrator(Elaboratable):
                     write_counter.eq(write_counter_rst),
                     not_first_sum.eq(1),
                     sum_counter.eq(sum_counter - 1),
+                    self.nearly_end.eq(0),
                 ]
                 with m.If((sum_counter == 1) | (sum_counter == 0) | do_abort):
                     # A new sum starts
@@ -223,6 +225,11 @@ class SpectrumIntegrator(Elaboratable):
                         pingpong.eq(~pingpong),
                         do_abort.eq(0),
                     ]
+                with m.If((sum_counter == 2)):
+                    m.d.sync += [
+                        self.nearly_end.eq(1),
+                    ]    
+
 
         with m.If(self.abort):
             m.d.sync += do_abort.eq(1)
@@ -308,5 +315,5 @@ if __name__ == '__main__':
             integrator.common_edge,
             integrator.input_last, integrator.re_in, integrator.im_in,
             integrator.done, integrator.rdaddr, integrator.rdata_value,
-            integrator.rdata_exponent, integrator.rden],
+            integrator.rdata_exponent, integrator.rden, integrator.nearly_end],
         platform=PlutoPlatform())
