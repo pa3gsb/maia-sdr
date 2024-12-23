@@ -23,6 +23,7 @@ pub struct Spectrometer {
     state: AppState,
     sender: broadcast::Sender<Bytes>,
     interrupt: InterruptWaiter,
+    data: [Bytes; 8],
 }
 
 /// Spectrometer configuration setter.
@@ -54,7 +55,9 @@ impl Spectrometer {
             state,
             interrupt,
             sender,
+            data: Default::default(),
         }
+        
     }
 
     /// Runs the spectrometer.
@@ -85,7 +88,12 @@ impl Spectrometer {
                 if self.sender.receiver_count() > 0 {
                     // It is ok if send returns Err, because there might be
                     // no receiver handles in this moment.
-                    let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
+                    let mut index = (x >> 61) as u8;
+                    self.fill_data(index,buffer);
+                    if index == 7
+                    {
+                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
+                    }    
                 }
             }
         }
@@ -117,6 +125,15 @@ impl Spectrometer {
             z.to_ne_bytes().into_iter()
         })
         .collect()
+    }
+
+    fn fill_data(&mut self, index: usize, input: Bytes) {
+        
+        if index < 8 {
+            self.data[index] = input.clone();  // Faire une copie de `input`
+        } else {
+            println!("Index out of bounds!"); // Gestion de l'erreur si l'index est hors limite
+        }
     }
 }
 
