@@ -23,7 +23,7 @@ pub struct Spectrometer {
     state: AppState,
     sender: broadcast::Sender<Bytes>,
     interrupt: InterruptWaiter,
-    data: [Bytes; 8],
+    slice: *mut u64,
 }
 
 /// Spectrometer configuration setter.
@@ -51,14 +51,17 @@ impl Spectrometer {
         interrupt: InterruptWaiter,
         sender: broadcast::Sender<Bytes>,
     ) -> Spectrometer {
+   static mut ARRAY: [u64; 4096*8] = [0; 4096*8];
         Spectrometer {
             state,
             interrupt,
             sender,
-            data: Default::default(),
+            slice: unsafe { ARRAY.as_mut_ptr() },   
         }
         
+        
     }
+    
 
     /// Runs the spectrometer.
     ///
@@ -76,6 +79,7 @@ impl Spectrometer {
                 SpectrometerMode::Average => BASE_SCALE / (num_integrations * samp_rate),
                 SpectrometerMode::PeakDetect => BASE_SCALE / samp_rate,
             };
+
             tracing::trace!(
                 last_buffer = ip_core.spectrometer_last_buffer(),
                 samp_rate,
@@ -88,12 +92,24 @@ impl Spectrometer {
                 if self.sender.receiver_count() > 0 {
                     // It is ok if send returns Err, because there might be
                     // no receiver handles in this moment.
-                    let mut index = (x >> 61) as u8;
-                    self.fill_data(index,buffer);
-                    if index == 7
+                    let index = (buffer[0] >> 61) as usize;
+                    let slice = unsafe { std::slice::from_raw_parts_mut(self.slice, 4096*8) };
+                    if index<8 {
+                      
+                        slice[index*4096..index*4096+4096].copy_from_slice(&buffer);
+                    }
+                    else        
                     {
-                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
-                    }    
+            
+                        slice[0..4096].copy_from_slice(&buffer);
+                        
+                    }
+                    if index == 7
+                    {   
+                        
+                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(slice, scale));
+                    }
+                    
                 }
             }
         }
@@ -127,14 +143,7 @@ impl Spectrometer {
         .collect()
     }
 
-    fn fill_data(&mut self, index: usize, input: Bytes) {
-        
-        if index < 8 {
-            self.data[index] = input.clone();  // Faire une copie de `input`
-        } else {
-            println!("Index out of bounds!"); // Gestion de l'erreur si l'index est hors limite
-        }
-    }
+   
 }
 
 impl SpectrometerConfig {
