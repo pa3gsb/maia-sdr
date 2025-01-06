@@ -175,18 +175,32 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_53_PULLUP {enabled}
 
 # DDR MT41K256M16 HA-125 (32M, 16bit, 8banks)
 
-if {[info exists libre]} {	
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_ACT_DDR_FREQ_MHZ 525.000000
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41J256M16 RE-125}
+if {[info exists libre]} {
+	ad_ip_parameter sys_ps7 CONFIG.PCW_APU_PERIPHERAL_FREQMHZ 750	
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {Custom}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BANK_ADDR_COUNT {3}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_ROW_ADDR_COUNT {15}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_COL_ADDR_COUNT {10}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_CL {9}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_CWL {7}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RCD {9}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RP {9}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RC {48.91}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RAS_MIN {35.0}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_FAW {40.0}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 {0.048}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 {0.050}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 {0.241}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 {0.240}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_ECC {Disabled}
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {32 Bit}
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 0.048
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 0.050
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 0.241
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 0.240
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DRAM_WIDTH {16 Bits}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DEVICE_CAPACITY {4096 MBits}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_SPEED_BIN {DDR3_1066F}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL {1}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE {1}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE {1}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF {0}
 } else {
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {16 Bit}
@@ -282,7 +296,22 @@ ad_connect  sys_concat_intc/In1 GND
 ad_connect  sys_concat_intc/In0 GND
 
 # ad9361
+if {[info exists libre]} {
+create_bd_port -dir I rx_clk_in_p
+create_bd_port -dir I rx_clk_in_n
+create_bd_port -dir I rx_frame_in_p
+create_bd_port -dir I rx_frame_in_n
+create_bd_port -dir I -from 5 -to 0 rx_data_in_p
+create_bd_port -dir I -from 5 -to 0 rx_data_in_n
 
+create_bd_port -dir O tx_clk_out_p
+create_bd_port -dir O tx_clk_out_n
+create_bd_port -dir O tx_frame_out_p
+create_bd_port -dir O tx_frame_out_n
+create_bd_port -dir O -from 5 -to 0 tx_data_out_p
+create_bd_port -dir O -from 5 -to 0 tx_data_out_n
+
+} else {
 create_bd_port -dir I rx_clk_in
 create_bd_port -dir I rx_frame_in
 create_bd_port -dir I -from 11 -to 0 rx_data_in
@@ -290,7 +319,7 @@ create_bd_port -dir I -from 11 -to 0 rx_data_in
 create_bd_port -dir O tx_clk_out
 create_bd_port -dir O tx_frame_out
 create_bd_port -dir O -from 11 -to 0 tx_data_out
-
+}
 create_bd_port -dir O enable
 create_bd_port -dir O txnrx
 create_bd_port -dir I up_enable
@@ -300,10 +329,15 @@ create_bd_port -dir I up_txnrx
 
 ad_ip_instance axi_ad9361 axi_ad9361
 ad_ip_parameter axi_ad9361 CONFIG.ID 0
+if {[info exists libre]} {
+ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 0
+ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
+ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 30
+} else {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 1
 ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
-
+}
 # parameters to reduce size
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
@@ -349,13 +383,27 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 
 # connections
-
+if {[info exists libre]} {
+ad_connect  rx_clk_in_p axi_ad9361/rx_clk_in_p
+ad_connect  rx_clk_in_n axi_ad9361/rx_clk_in_n
+ad_connect  rx_frame_in_p axi_ad9361/rx_frame_in_p
+ad_connect  rx_frame_in_n axi_ad9361/rx_frame_in_n
+ad_connect  rx_data_in_p axi_ad9361/rx_data_in_p
+ad_connect  rx_data_in_n axi_ad9361/rx_data_in_n
+ad_connect  tx_clk_out_p axi_ad9361/tx_clk_out_p
+ad_connect  tx_clk_out_n axi_ad9361/tx_clk_out_n
+ad_connect  tx_frame_out_p axi_ad9361/tx_frame_out_p
+ad_connect  tx_frame_out_n axi_ad9361/tx_frame_out_n
+ad_connect  tx_data_out_p axi_ad9361/tx_data_out_p
+ad_connect  tx_data_out_n axi_ad9361/tx_data_out_n
+} else {
 ad_connect  rx_clk_in axi_ad9361/rx_clk_in
 ad_connect  rx_frame_in axi_ad9361/rx_frame_in
 ad_connect  rx_data_in axi_ad9361/rx_data_in
 ad_connect  tx_clk_out axi_ad9361/tx_clk_out
 ad_connect  tx_frame_out axi_ad9361/tx_frame_out
 ad_connect  tx_data_out axi_ad9361/tx_data_out
+}
 ad_connect  enable axi_ad9361/enable
 ad_connect  txnrx axi_ad9361/txnrx
 ad_connect  up_enable axi_ad9361/up_enable
