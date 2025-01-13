@@ -417,7 +417,18 @@ ad_connect  axi_ad9361/adc_data_i0 adc_i_slice/Din
 ad_connect  axi_ad9361/adc_data_q0 adc_q_slice/Din
 ad_connect  adc_i_slice/Dout maia_sdr/re_in
 ad_connect  adc_q_slice/Dout maia_sdr/im_in
-ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
+
+if {[info exists libre]} {
+	add_files -norecurse  ../pluto/clk_div2.v
+	create_bd_cell -type module -reference ClockDividerBy2 lvds_clck2
+
+	ad_connect  lvds_clck2/clk_in  axi_ad9361/l_clk
+	ad_connect  lvds_clck2/rst  sys_cpu_reset
+	ad_connect  lvds_clck2/clk_out  maia_sdr/sampling_clk
+
+} else {
+	ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
+}
 ad_connect  sys_cpu_clk maia_sdr/s_axi_lite_clk
 ad_connect  sys_cpu_reset maia_sdr/s_axi_lite_rst
 ad_connect  maia_sdr_clk/clk_out1 maia_sdr/clk
