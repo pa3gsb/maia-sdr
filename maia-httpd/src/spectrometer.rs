@@ -92,7 +92,7 @@ impl Spectrometer {
                 if self.sender.receiver_count() > 0 {
                     
                         
-                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(slice, scale));
+                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
                     
                     
                 }
