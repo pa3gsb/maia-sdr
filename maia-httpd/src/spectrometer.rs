@@ -90,25 +90,10 @@ impl Spectrometer {
             // we iterate over the buffers.
             for buffer in ip_core.get_spectrometer_buffers() {
                 if self.sender.receiver_count() > 0 {
-                    // It is ok if send returns Err, because there might be
-                    // no receiver handles in this moment.
-                    let index = (buffer[0] >> 61) as usize;
-                    let slice = unsafe { std::slice::from_raw_parts_mut(self.slice, 4096*8) };
-                    if index<8 {
-                      
-                        slice[index*4096..index*4096+4096].copy_from_slice(&buffer);
-                    }
-                    else        
-                    {
-            
-                        slice[0..4096].copy_from_slice(&buffer);
-                        
-                    }
-                    if index == 7
-                    {   
+                    
                         
                         let _ = self.sender.send(Self::buffer_u64fp_to_f32(slice, scale));
-                    }
+                    
                     
                 }
             }
