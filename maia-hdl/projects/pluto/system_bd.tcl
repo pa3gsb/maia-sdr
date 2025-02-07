@@ -45,6 +45,16 @@ create_bd_port -dir O PPS_LOCKED
 create_bd_port -dir O REF_10M_LOCKED
 }
 
+if {[info exists libre]} {
+create_bd_port -dir I CLKIN_10MHz
+create_bd_port -dir I CLK_40MHz_FPGA
+create_bd_port -dir O CLK_40M_DAC_DIN
+create_bd_port -dir O CLK_40M_DAC_SCLK
+create_bd_port -dir O CLK_40M_DAC_nSYNC
+create_bd_port -dir I PPS_IN
+}
+
+
 # instance: sys_ps7
 
 ad_ip_instance processing_system7 sys_ps7
@@ -254,6 +264,74 @@ if {[info exists e200]} {
 	ad_connect  sys_ps7/GMII_ETHERNET_0 sys_rgmii/GMII
 	ad_connect  sys_rgmii/MDIO_PHY MDIO_PHY
 	ad_connect  sys_rgmii/RGMII RGMII
+}
+
+if {[info exists libre]} {
+add_files -norecurse  ../../libresdr-hdl/dacxx11.v
+add_files -norecurse  ../../libresdr-hdl/b205_ref_pll.v
+create_bd_cell -type module -reference b205_ref_pll b205_ref_pll_0
+connect_bd_net [get_bd_ports CLK_40M_DAC_SCLK] [get_bd_pins b205_ref_pll_0/sclk]
+connect_bd_net [get_bd_ports CLK_40M_DAC_DIN] [get_bd_pins b205_ref_pll_0/mosi]
+connect_bd_net [get_bd_ports CLK_40M_DAC_nSYNC] [get_bd_pins b205_ref_pll_0/sync_n]
+
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0
+set_property CONFIG.C_ALL_OUTPUTS {1} [get_bd_cells axi_gpio_0]
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_0
+connect_bd_net [get_bd_pins xlslice_0/Din] [get_bd_pins axi_gpio_0/gpio_io_o]
+connect_bd_net [get_bd_pins xlslice_0/Dout] [get_bd_pins b205_ref_pll_0/reset]
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_1
+set_property -dict [list \
+  CONFIG.DIN_FROM {1} \
+  CONFIG.DIN_TO {1} \
+] [get_bd_cells xlslice_1]
+connect_bd_net [get_bd_pins xlslice_1/Din] [get_bd_pins axi_gpio_0/gpio_io_o]
+connect_bd_net [get_bd_pins xlslice_1/Dout] [get_bd_pins b205_ref_pll_0/dac_mode]
+
+connect_bd_net [get_bd_ports CLK_40MHz_FPGA] [get_bd_pins b205_ref_pll_0/clk_40M_FPGA]
+connect_bd_net [get_bd_ports CLKIN_10MHz] [get_bd_pins b205_ref_pll_0/ref_x] 
+# You could instead connect ref_x to the PPS port
+
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
+endgroup
+set_property -dict [list \
+  CONFIG.CONST_VAL {0} \
+  CONFIG.CONST_WIDTH {16} \
+] [get_bd_cells xlconstant_0]
+connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins b205_ref_pll_0/dac_user_set_value]
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_1
+endgroup
+set_property -dict [list \
+  CONFIG.CONST_VAL {42580} \
+  CONFIG.CONST_WIDTH {16} \
+] [get_bd_cells xlconstant_1]
+connect_bd_net [get_bd_pins xlconstant_1/dout] [get_bd_pins b205_ref_pll_0/dac_dft]
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
+endgroup
+set_property CONFIG.NUM_PORTS {5} [get_bd_cells xlconcat_0]
+connect_bd_net [get_bd_pins xlconcat_0/In0] [get_bd_pins b205_ref_pll_0/locked]
+connect_bd_net [get_bd_pins xlconcat_0/In1] [get_bd_pins b205_ref_pll_0/ref_is_10M]
+connect_bd_net [get_bd_pins xlconcat_0/In2] [get_bd_pins b205_ref_pll_0/ref_is_pps]
+connect_bd_net [get_bd_pins xlconcat_0/In3] [get_bd_pins b205_ref_pll_0/plllck]
+startgroup
+set_property -dict [list CONFIG.IN4_WIDTH.VALUE_SRC USER] [get_bd_cells xlconcat_0]
+set_property CONFIG.IN4_WIDTH {16} [get_bd_cells xlconcat_0]
+endgroup
+connect_bd_net [get_bd_pins xlconcat_0/In4] [get_bd_pins b205_ref_pll_0/dyn_dac]
+
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_1
+endgroup
+set_property CONFIG.C_ALL_INPUTS {1} [get_bd_cells axi_gpio_1]
+connect_bd_net [get_bd_pins axi_gpio_1/gpio_io_i] [get_bd_pins xlconcat_0/dout]
+
+ad_cpu_interconnect 0x41200000 axi_gpio_0
+ad_cpu_interconnect 0x41210000 axi_gpio_1
+# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/sys_ps7/FCLK_CLK0 (100 MHz)} Clk_slave {Auto} Clk_xbar {/sys_ps7/FCLK_CLK0 (100 MHz)} Master {/sys_ps7/M_AXI_GP0} Slave {/axi_gpio_0/S_AXI} ddr_seg {Auto} intc_ip {/axi_cpu_interconnect} master_apm {0}}  [get_bd_intf_pins axi_gpio_0/S_AXI]
+# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/sys_ps7/FCLK_CLK0 (100 MHz)} Clk_slave {Auto} Clk_xbar {/sys_ps7/FCLK_CLK0 (100 MHz)} Master {/sys_ps7/M_AXI_GP0} Slave {/axi_gpio_1/S_AXI} ddr_seg {Auto} intc_ip {/axi_cpu_interconnect} master_apm {0}}  [get_bd_intf_pins axi_gpio_1/S_AXI]
+
 }
 # interface connections
 
@@ -535,6 +613,7 @@ if {[info exists maia_iio]} {
 } else {
 	ad_cpu_interrupt ps-13 mb-13 maia_sdr/interrupt_out
 }
+
 
 if {[info exists maia_iio]} {
 

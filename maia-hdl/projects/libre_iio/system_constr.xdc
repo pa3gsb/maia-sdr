@@ -202,3 +202,11 @@ set_property PACKAGE_PIN W5 [get_ports {ddr_dqs_p[3]}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_nSYNC];
+set_property -dict {PACKAGE_PIN F19 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_SCLK];
+set_property -dict {PACKAGE_PIN F20 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_DIN];
+set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVCMOS33} [get_ports PPS_IN];
+set_property -dict {PACKAGE_PIN H16 IOSTANDARD LVCMOS33} [get_ports CLK_40MHz_FPGA];
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports CLKIN_10MHz]; # Same bank as CLK_40MHz_FPGA. 3.3V on data sheet.
+
+

@@ -75,7 +75,19 @@ module system_top (
 
   output          enable,
   output          txnrx,
-
+ 
+ // clock form vctcxo
+  input  wire	 			      CLK_40MHz_FPGA  ,
+  // PPS or 10 MHz (need to choose from SW)
+  input  wire             PPS_IN          ,
+  input  wire             CLKIN_10MHz     ,
+ 
+  // Clock disciplining / AD5662 controls
+  output wire             CLK_40M_DAC_nSYNC,
+  output wire             CLK_40M_DAC_SCLK ,
+  output wire             CLK_40M_DAC_DIN ,
+  
+  
   inout           gpio_resetb,
   inout           gpio_en_agc,
   inout   [ 3:0]  gpio_ctl,
@@ -106,8 +118,14 @@ module system_top (
               gpio_status}));     //  7: 0
 
   assign gpio_i[16:14] = gpio_o[16:14];
-
+  
   system_wrapper i_system_wrapper (
+    .CLKIN_10MHz(CLKIN_10MHz),
+    .CLK_40MHz_FPGA(CLK_40MHz_FPGA),
+    .CLK_40M_DAC_DIN(CLK_40M_DAC_DIN),
+    .CLK_40M_DAC_SCLK(CLK_40M_DAC_SCLK),
+    .CLK_40M_DAC_nSYNC(CLK_40M_DAC_nSYNC),
+    .PPS_IN(PPS_IN),
     .ddr_addr (ddr_addr),
     .ddr_ba (ddr_ba),
     .ddr_cas_n (ddr_cas_n),
