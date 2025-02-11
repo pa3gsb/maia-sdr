@@ -286,7 +286,7 @@ impl Waterfall {
         let center_freq = Self::actual_center_freq(center_freq, samp_rate);
         if center_freq != self.center_freq || samp_rate != self.samp_rate {
             self.center_freq = center_freq;
-            self.samp_rate = samp_rate * 8.0;
+            self.samp_rate = samp_rate ;
             // update frequency labels VAOs and texts texture
             self.frequency_labels_vao(engine)?;
         }
