@@ -50,12 +50,11 @@ impl Spectrometer {
         interrupt: InterruptWaiter,
         sender: broadcast::Sender<Bytes>,
     ) -> Spectrometer {
-   static mut ARRAY: [u64; 4096*8] = [0; 4096*8];
-        Spectrometer {
+           Spectrometer {
             state,
             interrupt,
             sender,
-            slice: unsafe { ARRAY.as_mut_ptr() },   
+           
         }
         
         
