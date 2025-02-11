@@ -94,7 +94,7 @@ impl Waterfall {
     // number of indices for a rectangle
     const RECTANGLE_NUM_INDICES: usize = 6;
 
-    const TEXTURE_WIDTH: usize = 4096*8;
+    const TEXTURE_WIDTH: usize = 4096;
     const TEXTURE_HEIGHT: usize = 512;
 
     const SPECTRUM_POINTS: usize = Self::TEXTURE_WIDTH;
