@@ -23,7 +23,6 @@ pub struct Spectrometer {
     state: AppState,
     sender: broadcast::Sender<Bytes>,
     interrupt: InterruptWaiter,
-    slice: *mut u64,
 }
 
 /// Spectrometer configuration setter.
