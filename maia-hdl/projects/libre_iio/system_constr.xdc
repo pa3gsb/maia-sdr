@@ -1,6 +1,20 @@
 # constraints
 # ad9361 (SWAP == 0x1)
 
+set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_nSYNC]
+set_property -dict {PACKAGE_PIN F19 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_SCLK]
+set_property -dict {PACKAGE_PIN F20 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_DIN]
+set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVCMOS33} [get_ports PPS_IN]
+set_property -dict {PACKAGE_PIN H16 IOSTANDARD LVCMOS33} [get_ports CLK_40MHz_FPGA]
+set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports CLKIN_10MHz]
+#DONT KNOW WHAT IS REQ
+set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports CLKIN_10MHz_REQ]
+set_property PACKAGE_PIN J20 [get_ports LED0]
+set_property PACKAGE_PIN H20 [get_ports LED1]
+set_property IOSTANDARD LVCMOS33 [get_ports LED0]
+set_property IOSTANDARD LVCMOS33 [get_ports LED1]
+
+
 set_property -dict {PACKAGE_PIN P20 IOSTANDARD LVDS_25 DIFF_TERM 1} [get_ports rx_clk_in_n]
 set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVDS_25 DIFF_TERM 1} [get_ports rx_clk_in_p]
 set_property -dict {PACKAGE_PIN U19 IOSTANDARD LVDS_25 DIFF_TERM 1} [get_ports rx_frame_in_n]
@@ -45,12 +59,15 @@ set_property -dict {PACKAGE_PIN U13 IOSTANDARD LVCMOS25} [get_ports {gpio_status
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS25} [get_ports {gpio_status[7]}]
 
 set_property -dict {PACKAGE_PIN T10 IOSTANDARD LVCMOS25} [get_ports {gpio_ctl[0]}]
+# CHECK AS schematic says EXT_GPIO G15 K14 J14 N15 
 set_property -dict {PACKAGE_PIN Y11 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[1]}]
 set_property -dict {PACKAGE_PIN V10 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[2]}]
 set_property -dict {PACKAGE_PIN U9 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[3]}]
 
 set_property -dict {PACKAGE_PIN P16 IOSTANDARD LVCMOS25} [get_ports gpio_en_agc]
+#set_property -dict {PACKAGE_PIN U20 IOSTANDARD LVCMOS25} [get_ports gpio_sync]
 set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS25} [get_ports gpio_resetb]
+#set_property -dict {PACKAGE_PIN G18 IOSTANDARD LVCMOS33} [get_ports gpio_clksel]
 
 set_property -dict {PACKAGE_PIN P14 IOSTANDARD LVCMOS25} [get_ports txnrx]
 set_property -dict {PACKAGE_PIN R18 IOSTANDARD LVCMOS25} [get_ports enable]
@@ -62,6 +79,8 @@ set_property -dict {PACKAGE_PIN P18 IOSTANDARD LVCMOS25 PULLTYPE PULLUP} [get_po
 set_property -dict {PACKAGE_PIN R14 IOSTANDARD LVCMOS25} [get_ports spi_clk]
 set_property -dict {PACKAGE_PIN P15 IOSTANDARD LVCMOS25} [get_ports spi_mosi]
 set_property -dict {PACKAGE_PIN R19 IOSTANDARD LVCMOS25} [get_ports spi_miso]
+
+set_property -dict {PACKAGE_PIN G15 IOSTANDARD LVCMOS25} [get_ports clkout_in]
 
 set_property  -dict {PACKAGE_PIN  K14  IOSTANDARD LVCMOS33} [get_ports pl_spi_clk_o]
 set_property  -dict {PACKAGE_PIN  J14  IOSTANDARD LVCMOS33} [get_ports pl_spi_miso]
@@ -202,11 +221,5 @@ set_property PACKAGE_PIN W5 [get_ports {ddr_dqs_p[3]}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 
-set_property -dict {PACKAGE_PIN H18 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_nSYNC];
-set_property -dict {PACKAGE_PIN F19 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_SCLK];
-set_property -dict {PACKAGE_PIN F20 IOSTANDARD LVCMOS33} [get_ports CLK_40M_DAC_DIN];
-set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVCMOS33} [get_ports PPS_IN];
-set_property -dict {PACKAGE_PIN H16 IOSTANDARD LVCMOS33} [get_ports CLK_40MHz_FPGA];
-set_property -dict {PACKAGE_PIN K17 IOSTANDARD LVCMOS33} [get_ports CLKIN_10MHz]; # Same bank as CLK_40MHz_FPGA. 3.3V on data sheet.
 
 
