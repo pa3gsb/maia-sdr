@@ -51,7 +51,11 @@ create_bd_port -dir I CLK_40MHz_FPGA
 create_bd_port -dir O CLK_40M_DAC_DIN
 create_bd_port -dir O CLK_40M_DAC_SCLK
 create_bd_port -dir O CLK_40M_DAC_nSYNC
+create_bd_port -dir I PPS_GPS
 create_bd_port -dir I PPS_IN
+create_bd_port -dir O PPS_LED
+create_bd_port -dir O PPS_LOCKED
+create_bd_port -dir O REF_10M_LOCKED
 }
 
 
@@ -266,6 +270,27 @@ if {[info exists e200]} {
 	ad_connect  sys_rgmii/RGMII RGMII
 }
 
+if {[info exists libre-200style]} {
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/axi_vcxo_ctrl_v1_0.v
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/axi_vcxo_ctrl_v1_0_S00_AXI.v
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/b205_ref_pll.v
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/ltc2630_spi.v
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/ad5662_auto_spi.v
+	add_files -norecurse  ../../antsdr-hdl/axi_vcxo_ctrl/src/dacxx11_spi.v
+	create_bd_cell -type module -reference axi_vcxo_ctrl axi_vcxo_ctrl
+	#set axi_vcxo_ctrl [ create_bd_cell -type ip -vlnv user.org:user:axi_vcxo_ctrl:1.0 axi_vcxo_ctrl ]
+	ad_ip_parameter axi_vcxo_ctrl CONFIG.DEVICE DAC5311
+	ad_connect axi_vcxo_ctrl/CLK_40M_DAC_DIN CLK_40M_DAC_DIN
+	ad_connect axi_vcxo_ctrl/CLK_40M_DAC_SCLK CLK_40M_DAC_SCLK
+	ad_connect axi_vcxo_ctrl/CLK_40M_DAC_nSYNC CLK_40M_DAC_nSYNC
+	ad_connect axi_vcxo_ctrl/CLKIN_10MHz CLKIN_10MHz
+	ad_connect axi_vcxo_ctrl/CLK_40MHz_FPGA CLK_40MHz_FPGA
+	ad_connect axi_vcxo_ctrl/PPS_GPS PPS_GPS
+	ad_connect axi_vcxo_ctrl/PPS_IN PPS_IN
+	ad_connect axi_vcxo_ctrl/PPS_LED PPS_LED
+	ad_connect axi_vcxo_ctrl/PPS_LOCKED PPS_LOCKED
+	ad_connect axi_vcxo_ctrl/REF_10M_LOCKED REF_10M_LOCKED
+}
 if {[info exists libre]} {
 add_files -norecurse  ../../libresdr-hdl/dacxx11.v
 add_files -norecurse  ../../libresdr-hdl/b205_ref_pll.v
@@ -298,15 +323,8 @@ set_property -dict [list \
   CONFIG.CONST_VAL {0} \
   CONFIG.CONST_WIDTH {16} \
 ] [get_bd_cells xlconstant_0]
-connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins b205_ref_pll_0/dac_user_set_value]
-startgroup
-create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_1
-endgroup
-set_property -dict [list \
-  CONFIG.CONST_VAL {42580} \
-  CONFIG.CONST_WIDTH {16} \
-] [get_bd_cells xlconstant_1]
-connect_bd_net [get_bd_pins xlconstant_1/dout] [get_bd_pins b205_ref_pll_0/dac_dft]
+connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins b205_ref_pll_0/dac_dft]
+
 startgroup
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
 endgroup
@@ -317,7 +335,7 @@ connect_bd_net [get_bd_pins xlconcat_0/In2] [get_bd_pins b205_ref_pll_0/ref_is_p
 connect_bd_net [get_bd_pins xlconcat_0/In3] [get_bd_pins b205_ref_pll_0/plllck]
 startgroup
 set_property -dict [list CONFIG.IN4_WIDTH.VALUE_SRC USER] [get_bd_cells xlconcat_0]
-set_property CONFIG.IN4_WIDTH {16} [get_bd_cells xlconcat_0]
+set_property CONFIG.IN4_WIDTH {28} [get_bd_cells xlconcat_0]
 endgroup
 connect_bd_net [get_bd_pins xlconcat_0/In4] [get_bd_pins b205_ref_pll_0/dyn_dac]
 
@@ -327,8 +345,26 @@ endgroup
 set_property CONFIG.C_ALL_INPUTS {1} [get_bd_cells axi_gpio_1]
 connect_bd_net [get_bd_pins axi_gpio_1/gpio_io_i] [get_bd_pins xlconcat_0/dout]
 
+
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_2
+set_property CONFIG.C_ALL_OUTPUTS {1} [get_bd_cells axi_gpio_2]
+connect_bd_net [get_bd_pins axi_gpio_2/gpio_io_o] [get_bd_pins b205_ref_pll_0/dac_user_set_value]
+
 ad_cpu_interconnect 0x41200000 axi_gpio_0
 ad_cpu_interconnect 0x41210000 axi_gpio_1
+ad_cpu_interconnect 0x41220000 axi_gpio_2
+
+
+
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_led
+set_property -dict [list \
+  CONFIG.DIN_FROM {0} \
+  CONFIG.DIN_TO {0} \
+] [get_bd_cells xlslice_led]
+connect_bd_net [get_bd_pins xlslice_led/Din] [get_bd_pins gpio_o]
+ad_connect xlslice_led/Dout PPS_LOCKED
+
+ad_connect b205_ref_pll_0/ref_is_10M PPS_LED
 # apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/sys_ps7/FCLK_CLK0 (100 MHz)} Clk_slave {Auto} Clk_xbar {/sys_ps7/FCLK_CLK0 (100 MHz)} Master {/sys_ps7/M_AXI_GP0} Slave {/axi_gpio_0/S_AXI} ddr_seg {Auto} intc_ip {/axi_cpu_interconnect} master_apm {0}}  [get_bd_intf_pins axi_gpio_0/S_AXI]
 # apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/sys_ps7/FCLK_CLK0 (100 MHz)} Clk_slave {Auto} Clk_xbar {/sys_ps7/FCLK_CLK0 (100 MHz)} Master {/sys_ps7/M_AXI_GP0} Slave {/axi_gpio_1/S_AXI} ddr_seg {Auto} intc_ip {/axi_cpu_interconnect} master_apm {0}}  [get_bd_intf_pins axi_gpio_1/S_AXI]
 
@@ -578,6 +614,9 @@ if {[info exists maia_iio]} {
 	ad_cpu_interconnect 0x7C400000 maia_sdr
 }
 if {[info exists e200]} {
+	ad_cpu_interconnect 0x43C00000 axi_vcxo_ctrl
+}
+if {[info exists libre-e200style]} {
 	ad_cpu_interconnect 0x43C00000 axi_vcxo_ctrl
 }
 ad_ip_parameter sys_ps7 CONFIG.PCW_USE_S_AXI_HP1 {1}
