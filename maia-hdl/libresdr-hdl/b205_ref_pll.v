@@ -16,7 +16,7 @@ module b205_ref_pll#(parameter DEVICE="LTC2630")(
     input           dac_mode,
     input  [15:0]   dac_dft, // Reset value?
     input  [15:0]   dac_user_set_value, // User set value if loop is disabled
-    output [15:0]   dyn_dac, // Output to DAC
+    output [28:0]   dyn_dac, // Output to DAC
     output ref_out, // 10M out
     // SPI lines to AD5662
     output sclk,
@@ -354,7 +354,8 @@ module b205_ref_pll#(parameter DEVICE="LTC2630")(
         .sync_n(sync_n)
     );
   
-    assign dyn_dac = dac_value;
+    //assign dyn_dac = dac_value;
+    assign dyn_dac = freq_err;
 
 
 
