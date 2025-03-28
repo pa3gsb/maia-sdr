@@ -6,7 +6,8 @@
 # set beforehand.
 set_property ip_repo_paths {../../antsdr-hdl ../../ip ../../adi-hdl/library} [current_fileset]
 update_ip_catalog
-
+source ../../adi-hdl/projects/common/xilinx/adi_fir_filter_bd.tcl
+					 
 # default ports
 
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 ddr
@@ -445,11 +446,11 @@ ad_ip_instance axi_ad9361 axi_ad9361
 ad_ip_parameter axi_ad9361 CONFIG.ID 0
 if {[info exists libre]} {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 0
-ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
+ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 30
 } else {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 1
-ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
+ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 }
 # parameters to reduce size
@@ -457,10 +458,10 @@ ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
 	
 if {![info exists maia_iio]} {
-	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 1
 }
 # Maia SDR core
@@ -577,7 +578,7 @@ if {[info exists maia_iio]} {
 	ad_ip_instance util_cpack2 cpack
 
 	ad_connect axi_ad9361/adc_enable_i0 cpack/enable_0
-	ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
+	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
 
 	ad_connect axi_ad9361/l_clk cpack/clk
 	ad_connect axi_ad9361/rst cpack/reset
@@ -591,7 +592,7 @@ if {[info exists maia_iio]} {
 	  C_OPERATION {or} \
 	  C_SIZE 1]
 
-	ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
+	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
 	ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
 	ad_connect  logic_or/Res  tx_upack/fifo_rd_en
 	ad_connect  tx_upack/fifo_rd_underflow axi_ad9361/dac_dunf
@@ -659,8 +660,8 @@ if {[info exists maia_iio]} {
 	# ======================= 8BITS RX OUT  ============================
 	add_files -norecurse  ../pluto/cs12_cs8.v
 	create_bd_cell -type module -reference cs12_cs8 rxcs12_cs8
-	ad_connect axi_ad9361/adc_data_i0 rxcs12_cs8/sample_in1
-	ad_connect axi_ad9361/adc_data_q0 rxcs12_cs8/sample_in2
+	#ad_connect axi_ad9361/adc_data_i0 rxcs12_cs8/sample_in1
+	#ad_connect axi_ad9361/adc_data_q0 rxcs12_cs8/sample_in2
 	
 	#Mux select CS8
 	#Select input depending on qo_enable
@@ -675,13 +676,13 @@ if {[info exists maia_iio]} {
 	ad_connect muxcs8/select_path logic_no_q0/Res
 
 	#First input CS16 - > I0 -> I0
-	ad_connect axi_ad9361/adc_data_i0 muxcs8/data_in_0
-	ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_0
+	#ad_connect axi_ad9361/adc_data_i0 muxcs8/data_in_0
+	#ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_0
 	ad_connect axi_ad9361/adc_enable_q0 muxcs8/enable_in_0
 
 	#Second input CS8 - > I0+Q0
-	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
-	ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_1
+	#ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
+	#ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_1
 	ad_connect GND muxcs8/enable_in_1
 
 	#OUT
@@ -815,7 +816,7 @@ if {[info exists maia_iio]} {
 	#OUT
 	#ad_connect muxcs82/valid_out cpack/fifo_wr_en
 	ad_connect muxcs82/data_out cpack/fifo_wr_data_2
-	ad_connect muxcs82/enable_out cpack/enable_3
+	#ad_connect muxcs82/enable_out cpack/enable_3
 
 	# ======================= 8BITS TX2 OUT  ============================
 	# I PART
@@ -905,5 +906,65 @@ if {[info exists maia_iio]} {
 	ad_connect sweeper_io/gpio_o logic_orgpio/Op1
 	ad_connect sys_ps7/GPIO_O logic_orgpio/Op2
 
+
+	### TX FIR INTERPOLATOR ######
+	if {[info exists with_tx_fir]} {
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_i0]]]	
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_q0]]]	   
+
+		ad_add_interpolation_filter "tx_fir_interpolator" 8 2 1 {61.44} {7.68} \
+									"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
+
+		ad_ip_instance xlslice interp_slice
+		ad_connect axi_ad9361/l_clk tx_fir_interpolator/aclk
+
+		ad_connect muxcs8_tx_i/enable_out tx_fir_interpolator/dac_enable_0
+		ad_connect axi_ad9361/dac_valid_i0 tx_fir_interpolator/dac_valid_0
+		ad_connect muxcs8_tx_i/data_out tx_fir_interpolator/data_in_0
+		ad_connect muxcs8_tx_q/enable_out tx_fir_interpolator/dac_enable_1
+		ad_connect axi_ad9361/dac_valid_q0 tx_fir_interpolator/dac_valid_1
+		ad_connect muxcs8_tx_q/data_out tx_fir_interpolator/data_in_1
+
+		ad_connect axi_ad9361/up_dac_gpio_out interp_slice/Din
+		ad_connect  tx_fir_interpolator/active interp_slice/Dout
+		ad_connect  logic_or/Op1  tx_fir_interpolator/valid_out_0
+		ad_connect axi_ad9361/dac_data_i0 tx_fir_interpolator/data_out_0
+		ad_connect axi_ad9361/dac_data_q0 tx_fir_interpolator/data_out_1
+	}
+if {[info exists with_rx_fir]} {
+			
+	# TODO ; delete existing nodes
+	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
+	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
+	#ad_connect axi_ad9361/adc_data_i0 rxcs12_cs8/sample_in1
+	#ad_connect axi_ad9361/adc_data_q0 rxcs12_cs8/sample_in2
+	#ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
+	#ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_1
+
+	ad_add_decimation_filter "rx_fir_decimator" 8 2 1 {61.44} {61.44} \
+                         "$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
+	ad_ip_instance xlslice decim_slice
+	ad_connect axi_ad9361/l_clk rx_fir_decimator/aclk
+	ad_connect axi_ad9361/up_adc_gpio_out decim_slice/Din
+	ad_connect rx_fir_decimator/active decim_slice/Dout
+
+	
+	ad_connect axi_ad9361/adc_valid_i0 rx_fir_decimator/valid_in_0
+	ad_connect axi_ad9361/adc_enable_i0 rx_fir_decimator/enable_in_0
+	ad_connect axi_ad9361/adc_data_i0 rx_fir_decimator/data_in_0
+	ad_connect axi_ad9361/adc_valid_q0 rx_fir_decimator/valid_in_1
+	ad_connect axi_ad9361/adc_enable_q0 rx_fir_decimator/enable_in_1
+	ad_connect axi_ad9361/adc_data_q0 rx_fir_decimator/data_in_1
+
+	ad_connect rx_fir_decimator/data_out_0 muxcs8/data_in_0
+	ad_connect rx_fir_decimator/valid_out_0 muxcs8/valid_in_0
+	ad_connect rx_fir_decimator/valid_out_0 muxcs8/valid_in_1
+
+	ad_connect rx_fir_decimator/data_out_0 rxcs12_cs8/sample_in1
+	ad_connect rx_fir_decimator/data_out_1 rxcs12_cs8/sample_in2
+
+	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
+	ad_connect rx_fir_decimator/data_out_1 cpack/fifo_wr_data_1
+	}	
 }
 
