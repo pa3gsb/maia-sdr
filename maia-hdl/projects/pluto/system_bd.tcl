@@ -29,9 +29,15 @@ create_bd_port -dir I spi0_sdo_i
 create_bd_port -dir O spi0_sdo_o
 create_bd_port -dir I spi0_sdi_i
 
+if {[info exists fishball]} {
+create_bd_port -dir I -from 17 -to 0 gpio_i
+create_bd_port -dir O -from 17 -to 0 gpio_o
+create_bd_port -dir O -from 17 -to 0 gpio_t
+} else {
 create_bd_port -dir I -from 16 -to 0 gpio_i
 create_bd_port -dir O -from 16 -to 0 gpio_o
 create_bd_port -dir O -from 16 -to 0 gpio_t
+}
 
 if {[info exists e200]} {
 create_bd_port -dir I CLKIN_10MHz
@@ -65,6 +71,10 @@ create_bd_port -dir O REF_10M_LOCKED
 ad_ip_instance processing_system7 sys_ps7
 
 # ps7 settings
+ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 1.8V}
+ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 1.8V}
+ad_ip_parameter sys_ps7 CONFIG.PCW_PACKAGE_NAME clg225
+
 if {[info exists e200]} {
 ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 3.3V}
 ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 3.3V}
@@ -74,8 +84,9 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_ENET0_IO "EMIO"
 ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_IO "EMIO"
-} else {
-	if {[info exists libre]} {
+}
+
+if {[info exists libre]} {
 		ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 3.3V}
 		ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 2.5V}
 		ad_ip_parameter sys_ps7 CONFIG.PCW_PACKAGE_NAME clg400
@@ -88,11 +99,6 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_IO "EMIO"
 		ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_RESET_ENABLE 1
 		ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_RESET_IO "MIO 46"
 
-} else {		
-	ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 1.8V}
-	ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 1.8V}
-	ad_ip_parameter sys_ps7 CONFIG.PCW_PACKAGE_NAME clg225
-}
 }
 
 ad_ip_parameter sys_ps7 CONFIG.PCW_USE_S_AXI_HP1 1
@@ -103,6 +109,21 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ 100.0
 ad_ip_parameter sys_ps7 CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ 200.0
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 17
+
+if {[info exists fishball]} {
+ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 3.3V}
+ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK1_VOLTAGE {LVCMOS 1.8V}
+ad_ip_parameter sys_ps7 CONFIG.PCW_PACKAGE_NAME clg400
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_MIO_GPIO_ENABLE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_PERIPHERAL_ENABLE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_ENET0_IO "MIO 16 .. 27"
+ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_ENABLE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_IO "MIO 52 .. 53"
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 18
+ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_SDIO_PERIPHERAL_FREQMHZ 50
+}
 
 if {[info exists plutoplus]} {
     # Pluto+ Ethernet (not available in ADALM Pluto)
@@ -117,14 +138,25 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_SPI1_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_I2C0_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_UART1_IO {MIO 12 .. 13}
+if {[info exists fishball]} {
+ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_UART1_IO {MIO 8 .. 9}
+}
 ad_ip_parameter sys_ps7 CONFIG.PCW_I2C1_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_QSPI_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_QSPI_GRP_SINGLE_SS_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_SPI0_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_SPI0_SPI0_IO EMIO
+ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_PERIPHERAL_ENABLE 1
+if {[info exists pluto]} {
+ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 0
+ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 52}
+}
 
 if {[info exists plutoplus]} {
     # Pluto+ SD card (not available in ADALM Pluto)
+    ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 46}
+    ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_46_SLEW {slow}
+    ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_46_PULLUP {enabled}	
     ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 1
     ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_SD0_IO "MIO 40 .. 45"
     ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_GRP_CD_ENABLE 1
@@ -133,8 +165,10 @@ if {[info exists plutoplus]} {
     ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_47_SLEW {slow}
     ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_GRP_POW_ENABLE    0
     ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_GRP_WP_ENABLE     0
-} else {
-	if {[info exists e200]} {
+}
+
+if {[info exists e200]} {
+	ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 47}
 	ad_ip_parameter sys_ps7 CONFIG.PCW_I2C0_PERIPHERAL_ENABLE 1
 	ad_ip_parameter sys_ps7 CONFIG.PCW_I2C0_I2C0_IO {MIO 10 .. 11}
 
@@ -142,41 +176,24 @@ if {[info exists plutoplus]} {
 	ad_ip_parameter sys_ps7 CONFIG.PCW_SDIO_PERIPHERAL_FREQMHZ 50
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_PERIPHERAL_ENABLE 1
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_UART0_IO {MIO 14 .. 15}
-	} else {
-	if {[info exists libre]} {
+}
+
+if {[info exists libre]} {
+		ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 47}	
 		ad_ip_parameter sys_ps7 CONFIG.PCW_CRYSTAL_PERIPHERAL_FREQMHZ 50
 		ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 1
 		ad_ip_parameter sys_ps7 CONFIG.PCW_SDIO_PERIPHERAL_FREQMHZ 50
 		ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_PERIPHERAL_ENABLE 1
 		ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_UART0_IO {MIO 14 .. 15}
-	} else {			
-	    ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 0
-	}
-	}
 }
-
+if {[info exists fishball]} {	
+	ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 46}	
+}
 ad_ip_parameter sys_ps7 CONFIG.PCW_TTC0_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_USE_FABRIC_INTERRUPT 1
-ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_PERIPHERAL_ENABLE 1
+
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_MIO_GPIO_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_MIO_GPIO_IO MIO
-
-if {[info exists plutoplus]} {
-    # Different USB reset MIO for Pluto+
-    ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 46}
-    ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_46_SLEW {slow}
-    ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_46_PULLUP {enabled}
-} else {
-	if {[info exists e200]} {
-	ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 47}
-	} else {
-	if {[info exists libre]} {	
-	ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 47}	
-	} else {	
-	    ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 52}
-	}
-	}
-}
 ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_IRQ_F2P_INTR 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_IRQ_F2P_MODE REVERSE
@@ -189,6 +206,16 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_49_PULLUP {disabled}
 ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_53_PULLUP {enabled}
 
 # DDR MT41K256M16 HA-125 (32M, 16bit, 8banks)
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {16 Bit}
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 0.048
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 0.050
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 0.241
+	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 0.240
 
 if {[info exists libre]} {
 	ad_ip_parameter sys_ps7 CONFIG.PCW_APU_PERIPHERAL_FREQMHZ 750	
@@ -216,17 +243,19 @@ if {[info exists libre]} {
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE {1}
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE {1}
 	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF {0}
-} else {
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {16 Bit}
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 0.048
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 0.050
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 0.241
-	ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 0.240
+}
+if {[info exists fishball]} {
+# DDR MT41K256M16 HA-125 (32M, 32bit, 8banks)
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {32 Bit}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 0.048
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 0.050
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 0.241
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 0.240
 }
 
 
@@ -411,7 +440,7 @@ ad_connect  sys_concat_intc/In1 GND
 ad_connect  sys_concat_intc/In0 GND
 
 # ad9361
-if {[info exists libre]} {
+if {[info exists libre] || [info exists fishball]} {
 create_bd_port -dir I rx_clk_in_p
 create_bd_port -dir I rx_clk_in_n
 create_bd_port -dir I rx_frame_in_p
@@ -444,7 +473,8 @@ create_bd_port -dir I up_txnrx
 
 ad_ip_instance axi_ad9361 axi_ad9361
 ad_ip_parameter axi_ad9361 CONFIG.ID 0
-if {[info exists libre]} {
+#LVDS OR CMOS
+if {[info exists libre] || [info exists fishball]} {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 0
 ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 30
@@ -498,7 +528,7 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 
 # connections
-if {[info exists libre]} {
+if {[info exists libre] || [info exists fishball]} {
 ad_connect  rx_clk_in_p axi_ad9361/rx_clk_in_p
 ad_connect  rx_clk_in_n axi_ad9361/rx_clk_in_n
 ad_connect  rx_frame_in_p axi_ad9361/rx_frame_in_p
@@ -533,7 +563,7 @@ ad_connect  axi_ad9361/adc_data_q0 adc_q_slice/Din
 ad_connect  adc_i_slice/Dout maia_sdr/re_in
 ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
-if {[info exists libre]} {
+if {[info exists libre] || [info exists fishball]} {
 	add_files -norecurse  ../pluto/clk_div2.v
 	create_bd_cell -type module -reference ClockDividerBy2 lvds_clck2
 
@@ -593,6 +623,7 @@ if {[info exists maia_iio]} {
 	  C_SIZE 1]
 
 	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
+	ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
 	ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
 	ad_connect  logic_or/Res  tx_upack/fifo_rd_en
 	ad_connect  tx_upack/fifo_rd_underflow axi_ad9361/dac_dunf
@@ -911,7 +942,7 @@ if {[info exists maia_iio]} {
 	if {[info exists with_tx_fir]} {
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_i0]]]	
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_q0]]]	   
-
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op1]]]	   
 		ad_add_interpolation_filter "tx_fir_interpolator" 8 2 1 {61.44} {7.68} \
 									"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
 
