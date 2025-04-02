@@ -81,6 +81,7 @@ impl Server {
                 "/api/spectrometer",
                 get(spectrometer::get_spectrometer).patch(spectrometer::patch_spectrometer),
             )
+            .layer(CorsLayer::permissive())
             .route(
                 "/api/ddc/config",
                 get(ddc::get_ddc_config)
