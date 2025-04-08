@@ -476,7 +476,7 @@ ad_ip_parameter axi_ad9361 CONFIG.ID 0
 #LVDS OR CMOS
 if {[info exists libre] || [info exists fishball]} {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 0
-ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
+ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 30
 } else {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 1
@@ -564,12 +564,8 @@ ad_connect  adc_i_slice/Dout maia_sdr/re_in
 ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
 if {[info exists libre] || [info exists fishball]} {
-	add_files -norecurse  ../pluto/clk_div2.v
-	create_bd_cell -type module -reference ClockDividerBy2 lvds_clck2
-
-	ad_connect  lvds_clck2/clk_in  axi_ad9361/l_clk
-	ad_connect  lvds_clck2/rst  sys_cpu_reset
-	ad_connect  lvds_clck2/clk_out  maia_sdr/sampling_clk
+	
+	ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
 
 } else {
 	ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
@@ -942,7 +938,9 @@ if {[info exists maia_iio]} {
 	if {[info exists with_tx_fir]} {
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_i0]]]	
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_q0]]]	   
-		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op1]]]	   
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op1]]]
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op2]]]	   	   
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins tx_upack/fifo_rd_en]]]	   
 		ad_add_interpolation_filter "tx_fir_interpolator" 8 2 1 {61.44} {7.68} \
 									"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
 
@@ -958,7 +956,8 @@ if {[info exists maia_iio]} {
 
 		ad_connect axi_ad9361/up_dac_gpio_out interp_slice/Din
 		ad_connect  tx_fir_interpolator/active interp_slice/Dout
-		ad_connect  logic_or/Op1  tx_fir_interpolator/valid_out_0
+		#ad_connect  logic_or/Op1  tx_fir_interpolator/valid_out_0
+		ad_connect  tx_fir_interpolator/valid_out_0 tx_upack/fifo_rd_en
 		ad_connect axi_ad9361/dac_data_i0 tx_fir_interpolator/data_out_0
 		ad_connect axi_ad9361/dac_data_q0 tx_fir_interpolator/data_out_1
 	}
