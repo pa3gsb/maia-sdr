@@ -17,3 +17,7 @@ ip_cores:
 	$(MAKE) -C ../../ip
 
 .PHONY: ip_cores
+
+fsbl:
+	bash -c "rm -rf build"
+	bash -c "xsct create_fsbl_project.tcl"

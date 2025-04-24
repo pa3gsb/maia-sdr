@@ -7,7 +7,10 @@ PROJECT_NAME := pluto
 
 M_DEPS += system_project.tcl
 M_DEPS += system_bd.tcl
-
+M_DEPS += ../../adi-hdl/projects/common/xilinx/adi_fir_filter_constr.xdc
+M_DEPS += ../../adi-hdl/projects/common/xilinx/adi_fir_filter_bd.tcl
+M_DEPS += ../../adi-hdl/library/util_cdc/sync_bits.v
+M_DEPS += ../../adi-hdl/library/common/util_pulse_gen.v
 M_DEPS += ../../adi-hdl/library/common/ad_iobuf.v
 M_DEPS += ../../adi-hdl/library/common/ad_bus_mux.v
 M_DEPS += ../../adi-hdl/library/axi_ad9361/axi_ad9361_delay.tcl
@@ -26,3 +29,7 @@ ip_cores:
 	$(MAKE) -C ../../ip
 
 .PHONY: ip_cores
+
+fsbl:
+	bash -c "rm -rf build"
+	bash -c "xsct create_fsbl_project.tcl"
