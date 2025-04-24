@@ -246,16 +246,33 @@ if {[info exists libre]} {
 }
 if {[info exists fishball]} {
 # DDR MT41K256M16 HA-125 (32M, 32bit, 8banks)
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {32 Bit}
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
-ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_ACT_DDR_FREQ_MHZ 600	
+#ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {Custom}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BANK_ADDR_COUNT {3}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_ROW_ADDR_COUNT {15}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_COL_ADDR_COUNT {10}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_CL {11}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_CWL {8}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RCD {11}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RP {11}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RC {48.91}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_RAS_MIN {35.0}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_T_FAW {40.0}
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_0 0.048
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DQS_TO_CLK_DELAY_1 0.050
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY0 0.241
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BOARD_DELAY1 0.240
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_ECC {Disabled}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DEVICE_CAPACITY {4096 MBits}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_SPEED_BIN {DDR3_1066F}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {32 Bit}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_DRAM_WIDTH {16 Bits}
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_USE_INTERNAL_VREF 0
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_READ_GATE 1
+ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_TRAIN_DATA_EYE 1
+
 }
 
 
@@ -618,10 +635,12 @@ if {[info exists maia_iio]} {
 	  C_OPERATION {or} \
 	  C_SIZE 1]
 
+	
 	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
-	ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
-	ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
-	ad_connect  logic_or/Res  tx_upack/fifo_rd_en
+	#ad_connect  logic_or/Op2  axi_ad9361/dac_valid_i1
+	#ad_connect  logic_or/Res  tx_upack/fifo_rd_en
+	ad_connect axi_ad9361/dac_valid_i0 tx_upack/fifo_rd_en
+
 	ad_connect  tx_upack/fifo_rd_underflow axi_ad9361/dac_dunf
 
 	ad_connect  axi_ad9361/l_clk axi_ad9361_adc_dma/fifo_wr_clk
@@ -728,10 +747,11 @@ if {[info exists maia_iio]} {
 	
 	ad_ip_instance xlconcat concatslicetx_i
 
-	ad_ip_parameter concatslicetx_i CONFIG.NUM_PORTS 3
-	ad_ip_parameter concatslicetx_i CONFIG.IN0_WIDTH 4
+	
+	ad_ip_parameter concatslicetx_i CONFIG.NUM_PORTS 2
+	ad_ip_parameter concatslicetx_i CONFIG.IN0_WIDTH 8
 	ad_ip_parameter concatslicetx_i CONFIG.IN1_WIDTH 8
-	ad_ip_parameter concatslicetx_i CONFIG.IN2_WIDTH 4
+	
 
 	ad_connect shiftsliceitx/Dout concatslicetx_i/In1
 	
@@ -744,10 +764,9 @@ if {[info exists maia_iio]} {
 	ad_connect tx_upack/fifo_rd_data_0 shiftsliceqtx/Din
 
 	ad_ip_instance xlconcat concatslicetx_q
-	ad_ip_parameter concatslicetx_q CONFIG.NUM_PORTS 3
-	ad_ip_parameter concatslicetx_q CONFIG.IN0_WIDTH 4
+	ad_ip_parameter concatslicetx_q CONFIG.NUM_PORTS 2
+	ad_ip_parameter concatslicetx_q CONFIG.IN0_WIDTH 8
 	ad_ip_parameter concatslicetx_q CONFIG.IN1_WIDTH 8
-	ad_ip_parameter concatslicetx_q CONFIG.IN2_WIDTH 4
 
 	ad_connect shiftsliceqtx/Dout concatslicetx_q/In1
 
@@ -784,7 +803,8 @@ if {[info exists maia_iio]} {
 	ad_connect tx_upack/fifo_rd_data_1 muxcs8_tx_q/data_in_0
 	#Second input C8 - > CS16 > I0
 	ad_connect concatslicetx_q/Dout muxcs8_tx_q/data_in_1
-	ad_connect muxcs8_tx_q/enable_in_1 axi_ad9361/dac_enable_i0
+	#ad_connect muxcs8_tx_q/enable_in_1 axi_ad9361/dac_enable_i0
+	ad_connect muxcs8_tx_q/enable_in_1 axi_ad9361/dac_enable_q0
 
 	#OUT
 	ad_connect muxcs8_tx_q/data_out axi_ad9361/dac_data_q0
