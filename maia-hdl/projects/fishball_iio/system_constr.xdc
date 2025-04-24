@@ -79,5 +79,5 @@ create_clock -name spi0_clk      -period 40   [get_pins -hier */EMIOSPI0SCLKO]
 set_input_jitter clk_fpga_0 0.3
 set_input_jitter clk_fpga_1 0.15
 
-set_false_path -to [get_pins i_system_wrapper/system_i/lvds_clck2/inst/clk_out_reg/CLR]
+#set_false_path -to [get_pins i_system_wrapper/system_i/lvds_clck2/inst/clk_out_reg/CLR]
 
