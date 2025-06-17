@@ -138,15 +138,18 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_SPI1_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_I2C0_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_UART1_IO {MIO 12 .. 13}
+
 if {[info exists fishball]} {
 ad_ip_parameter sys_ps7 CONFIG.PCW_UART1_UART1_IO {MIO 8 .. 9}
 }
+
 ad_ip_parameter sys_ps7 CONFIG.PCW_I2C1_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_QSPI_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_QSPI_GRP_SINGLE_SS_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_SPI0_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_SPI0_SPI0_IO EMIO
 ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_PERIPHERAL_ENABLE 1
+
 if {[info exists pluto]} {
 ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 52}
@@ -186,9 +189,11 @@ if {[info exists libre]} {
 		ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_PERIPHERAL_ENABLE 1
 		ad_ip_parameter sys_ps7 CONFIG.PCW_UART0_UART0_IO {MIO 14 .. 15}
 }
+
 if {[info exists fishball]} {	
 	ad_ip_parameter sys_ps7 CONFIG.PCW_USB0_RESET_IO {MIO 46}	
 }
+
 ad_ip_parameter sys_ps7 CONFIG.PCW_TTC0_PERIPHERAL_ENABLE 0
 ad_ip_parameter sys_ps7 CONFIG.PCW_USE_FABRIC_INTERRUPT 1
 
@@ -338,6 +343,7 @@ if {[info exists libre-200style]} {
 	ad_connect axi_vcxo_ctrl/PPS_LOCKED PPS_LOCKED
 	ad_connect axi_vcxo_ctrl/REF_10M_LOCKED REF_10M_LOCKED
 }
+
 if {[info exists libre]} {
 add_files -norecurse  ../../libresdr-hdl/dacxx11.v
 add_files -norecurse  ../../libresdr-hdl/b205_ref_pll.v
@@ -575,17 +581,19 @@ ad_connect  axi_ad9361/tdd_sync GND
 ad_connect  sys_200m_clk axi_ad9361/delay_clk
 ad_connect  axi_ad9361/l_clk axi_ad9361/clk
 
-ad_connect  axi_ad9361/adc_data_i0 adc_i_slice/Din
-ad_connect  axi_ad9361/adc_data_q0 adc_q_slice/Din
+#ad_connect  axi_ad9361/adc_data_i0 adc_i_slice/Din
+#ad_connect  axi_ad9361/adc_data_q0 adc_q_slice/Din
 ad_connect  adc_i_slice/Dout maia_sdr/re_in
 ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
 if {[info exists libre] || [info exists fishball]} {
 	
-	ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	#ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	#ad_connect  axi_ad9361/l_clk   maia_sdr/sampling_clk
 
 } else {
-	ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
+	#ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	#ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
 }
 ad_connect  sys_cpu_clk maia_sdr/s_axi_lite_clk
 ad_connect  sys_cpu_reset maia_sdr/s_axi_lite_rst
@@ -623,7 +631,76 @@ if {[info exists maia_iio]} {
 	ad_connect axi_ad9361/adc_enable_i0 cpack/enable_0
 	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
 
+#if {[info exists fifo_xilinx]} {
+ad_ip_instance axis_data_fifo interclk_i
+ad_ip_parameter interclk_i CONFIG.FIFO_DEPTH 16
+ad_ip_parameter interclk_i CONFIG.FIFO_MODE 1
+ad_ip_parameter interclk_i CONFIG.IS_ACLK_ASYNC 1
+ad_ip_parameter interclk_i CONFIG.HAS_TLAST.VALUE_SRC USER
+ad_ip_parameter interclk_i CONFIG.HAS_TLAST 0
+ad_ip_parameter interclk_i CONFIG.TDATA_NUM_BYTES 2
+ad_ip_parameter interclk_i CONFIG.SYNCHRONIZATION_STAGES 4 
+
+ad_connect interclk_i/m_axis_aclk maia_sdr_clk/clk_out1
+ad_connect sys_cpu_resetn interclk_i/s_axis_aresetn 
+ad_connect  axi_ad9361/adc_data_i0 interclk_i/s_axis_tdata
+ad_connect  axi_ad9361/l_clk interclk_i/s_axis_aclk
+ad_connect  axi_ad9361/adc_valid_i0 interclk_i/s_axis_tvalid
+ad_connect interclk_i/m_axis_tdata adc_i_slice/Din
+ad_connect interclk_i/m_axis_tvalid maia_sdr/sampling_clk
+
+d_ip_instance axis_data_fifo interclk_q
+ad_ip_parameter interclk_q CONFIG.FIFO_DEPTH 16
+ad_ip_parameter interclk_q CONFIG.FIFO_MODE 1
+ad_ip_parameter interclk_q CONFIG.IS_ACLK_ASYNC 1
+ad_ip_parameter interclk_q CONFIG.HAS_TLAST.VALUE_SRC USER
+ad_ip_parameter interclk_q CONFIG.HAS_TLAST 0
+ad_ip_parameter interclk_q CONFIG.TDATA_NUM_BYTES 2
+ad_ip_parameter interclk_q CONFIG.SYNCHRONIZATION_STAGES 4 
+
+ad_connect interclk_q/m_axis_aclk maia_sdr_clk/clk_out1
+ad_connect sys_cpu_resetn interclk_q/s_axis_aresetn 
+ad_connect  axi_ad9361/adc_data_q0 interclk_q/s_axis_tdata
+ad_connect  axi_ad9361/l_clk interclk_q/s_axis_aclk
+ad_connect  axi_ad9361/adc_valid_q0 interclk_q/s_axis_tvalid
+ad_connect interclk_q/m_axis_tdata adc_q_slice/Din
+#ad_connect interclk_q/m_axis_tvalid maia_sdr/sampling_clk
+
+#}
+if {[info exists fifo_ad]} {
+ad_ip_instance util_axis_fifo interclk_i
+ad_ip_parameter interclk_i CONFIG.DATA_WIDTH 16
+
+ad_connect interclk_i/m_axis_aclk maia_sdr_clk/clk_out1
+ad_connect sys_cpu_resetn interclk_i/s_axis_aresetn 
+ad_connect sys_cpu_resetn interclk_i/m_axis_aresetn 
+ad_connect  axi_ad9361/adc_data_i0 interclk_i/s_axis_data
+ad_connect  axi_ad9361/l_clk interclk_i/s_axis_aclk
+ad_connect  axi_ad9361/adc_valid_i0 interclk_i/s_axis_valid
+ad_connect interclk_i/m_axis_data adc_i_slice/Din
+ad_connect interclk_i/m_axis_valid maia_sdr/sampling_clk
+
+ad_ip_instance util_axis_fifo interclk_q
+ad_ip_parameter interclk_q CONFIG.DATA_WIDTH 16
+
+ad_connect interclk_q/m_axis_aclk maia_sdr_clk/clk_out1
+ad_connect sys_cpu_resetn interclk_q/s_axis_aresetn 
+ad_connect sys_cpu_resetn interclk_q/m_axis_aresetn 
+ad_connect  axi_ad9361/adc_data_q0 interclk_q/s_axis_data
+ad_connect  axi_ad9361/l_clk interclk_q/s_axis_aclk
+ad_connect  axi_ad9361/adc_valid_q0 interclk_q/s_axis_valid
+ad_connect interclk_q/m_axis_data adc_q_slice/Din
+#ad_connect interclk_q/m_axis_valid maia_sdr/sampling_clk
+
+}
+
+
+
+
+
+
 	ad_connect axi_ad9361/l_clk cpack/clk
+	#ad_connect axi_ad9361/adc_valid_i0 cpack/clk --> NOT WORKING
 	ad_connect axi_ad9361/rst cpack/reset
 	ad_connect axi_ad9361_adc_dma/fifo_wr cpack/packed_fifo_wr
 
@@ -1016,5 +1093,49 @@ if {[info exists with_rx_fir]} {
 	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
 	ad_connect rx_fir_decimator/data_out_1 cpack/fifo_wr_data_1
 	}	
+}
+
+if {[info exists with_rx_fir_maia]} {
+
+	#In order to be controled by iio		
+	ad_ip_instance xlslice decim_slice
+	ad_connect axi_ad9361/up_adc_gpio_out decim_slice/Din
+
+	
+	
+
+	
+#I	
+	create_bd_cell -type module -reference ad_bus_mux mux_decim_i
+	ad_connect mux_decim_i/select_path decim_slice/Dout
+	ad_connect axi_ad9361/adc_valid_i0 mux_decim_i/valid_in_0
+	ad_connect axi_ad9361/adc_enable_i0 mux_decim_i/enable_in_0
+	ad_connect axi_ad9361/adc_data_i0 mux_decim_i/data_in_0
+	ad_connect maia_sdr/decim_strobe_out mux_decim_i/valid_in_1
+	ad_connect axi_ad9361/adc_enable_i0 mux_decim_i/enable_in_1
+	ad_connect maia_sdr/decim_re_out mux_decim_i/data_in_1
+
+#Q	
+
+	create_bd_cell -type module -reference ad_bus_mux mux_decim_q
+	ad_connect mux_decim_q/select_path decim_slice/Dout
+	ad_connect axi_ad9361/adc_valid_q0 mux_decim_q/valid_in_0
+	ad_connect axi_ad9361/adc_enable_q0 mux_decim_q/enable_in_0
+	ad_connect axi_ad9361/adc_data_q0 mux_decim_q/data_in_0
+
+	ad_connect maia_sdr/decim_strobe_out mux_decim_q/valid_in_1
+	ad_connect axi_ad9361/adc_enable_q0 mux_decim_q/enable_in_1
+	ad_connect maia_sdr/decim_im_out mux_decim_q/data_in_1
+
+	ad_connect mux_decim_i/data_out muxcs8/data_in_0
+	ad_connect mux_decim_i/valid_out muxcs8/valid_in_0
+	ad_connect mux_decim_i/valid_out muxcs8/valid_in_1
+
+	ad_connect mux_decim_i/data_out rxcs12_cs8/sample_in1
+	ad_connect mux_decim_q/data_out rxcs12_cs8/sample_in2
+
+	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
+	ad_connect mux_decim_q/data_out cpack/fifo_wr_data_1
+		
 }
 
