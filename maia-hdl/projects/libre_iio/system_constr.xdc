@@ -14,6 +14,8 @@ set_property PACKAGE_PIN H20 [get_ports LED1]
 set_property IOSTANDARD LVCMOS33 [get_ports LED0]
 set_property IOSTANDARD LVCMOS33 [get_ports LED1]
 
+set_property IOSTANDARD LVCMOS33 [get_ports fixed_io_mio[12]]
+set_property  -dict {PACKAGE_PIN D9   PULLTYPE PULLUP} [get_ports fixed_io_mio[12]]
 
 set_property -dict {PACKAGE_PIN P20 IOSTANDARD LVDS_25 DIFF_TERM 1} [get_ports rx_clk_in_n]
 set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVDS_25 DIFF_TERM 1} [get_ports rx_clk_in_p]
@@ -220,6 +222,7 @@ set_property PACKAGE_PIN W5 [get_ports {ddr_dqs_p[3]}]
 
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
+set_false_path -from [get_pins {i_system_wrapper/system_i/manual_decim/U0/gpio_core_1/Not_Dual.gpio_Data_Out_reg[0]/C}]
 
 
 
