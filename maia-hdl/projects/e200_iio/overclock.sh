@@ -62,5 +62,6 @@ pushd "$SDK_PATH/Release"
 make clean
 make
 
+mv fsbl.elf fsbl${new_cpu_mult}_${new_ddr_mult}.elf 
 echo 'Done. Run "make sdimg" now to create overclocked firmware.'
 
