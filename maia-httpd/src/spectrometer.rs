@@ -50,16 +50,12 @@ impl Spectrometer {
         interrupt: InterruptWaiter,
         sender: broadcast::Sender<Bytes>,
     ) -> Spectrometer {
-           Spectrometer {
+        Spectrometer {
             state,
             interrupt,
             sender,
-           
         }
-        
-        
     }
-    
 
     /// Runs the spectrometer.
     ///
@@ -77,7 +73,6 @@ impl Spectrometer {
                 SpectrometerMode::Average => BASE_SCALE / (num_integrations * samp_rate),
                 SpectrometerMode::PeakDetect => BASE_SCALE / samp_rate,
             };
-
             tracing::trace!(
                 last_buffer = ip_core.spectrometer_last_buffer(),
                 samp_rate,
@@ -88,11 +83,9 @@ impl Spectrometer {
             // we iterate over the buffers.
             for buffer in ip_core.get_spectrometer_buffers() {
                 if self.sender.receiver_count() > 0 {
-                    
-                        
-                        let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
-                    
-                    
+                    // It is ok if send returns Err, because there might be
+                    // no receiver handles in this moment.
+                    let _ = self.sender.send(Self::buffer_u64fp_to_f32(buffer, scale));
                 }
             }
         }
@@ -106,9 +99,8 @@ impl Spectrometer {
         // to shift left the mantissa by 2 times the exponent places.
 
         // TODO: optimize using Neon
-        
         let mut index = 0;
-    buffer
+        buffer
         .iter()
         .flat_map(|&x| {
             let exponent = ((x >> 56) & 3) as u8;
@@ -125,8 +117,6 @@ impl Spectrometer {
         })
         .collect()
     }
-
-   
 }
 
 impl SpectrometerConfig {

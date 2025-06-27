@@ -4,9 +4,9 @@
 //! render engine contained in [`crate::render`].
 
 use crate::render::{
-    texture_formats::{R16f, Rgb},
     DrawMode, ProgramSource, RenderEngine, RenderObject, Texture, TextureMagFilter,
     TextureMinFilter, TextureParameter, TextureWrap, Uniform, UniformValue,
+    texture_formats::{R16f, Rgb},
 };
 use std::cell::Cell;
 use std::rc::Rc;
@@ -286,7 +286,7 @@ impl Waterfall {
         let center_freq = Self::actual_center_freq(center_freq, samp_rate);
         if center_freq != self.center_freq || samp_rate != self.samp_rate {
             self.center_freq = center_freq;
-            self.samp_rate = samp_rate ;
+            self.samp_rate = samp_rate;
             // update frequency labels VAOs and texts texture
             self.frequency_labels_vao(engine)?;
         }
@@ -306,7 +306,7 @@ impl Waterfall {
     /// The center frequency and sample rate are given in units of Hz and
     /// samples per second.
     pub fn get_freq_samprate(&self) -> (f64, f64) {
-        let samp_rate = self.samp_rate ;
+        let samp_rate = self.samp_rate;
         (
             Self::inv_actual_center_freq(self.center_freq, samp_rate),
             samp_rate,
@@ -381,7 +381,7 @@ impl Waterfall {
     /// `[Self::set_freq_samprate]`.
     pub fn set_channel_frequency(&mut self, frequency: f64) {
         // The range for frequency is [-1, 1], so we need to multiply by 2.
-        let frequency =  2.0 * frequency / self.samp_rate;
+        let frequency = 2.0 * frequency / self.samp_rate;
         self.uniforms.channel_freq.set_data(frequency as f32);
     }
 
@@ -864,7 +864,7 @@ impl Waterfall {
                 .copied()
                 .enumerate()
                 .filter(|&(_, n)| 2 * n <= 1 << 16)
-                .last()
+                .next_back()
                 .unwrap();
             freqs.truncate(ndepth);
             nfreqs.truncate(depth + 1);

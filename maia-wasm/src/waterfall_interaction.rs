@@ -9,8 +9,8 @@ use crate::ui::Ui;
 use crate::waterfall::Waterfall;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 use web_sys::{HtmlCanvasElement, PointerEvent, WheelEvent, Window};
 
 /// Waterfall interaction controller.
@@ -112,7 +112,7 @@ impl WaterfallInteraction {
             .set_onpointermove(Some(self.onpointermove().into_js_value().unchecked_ref()));
     }
 
-    fn resize_canvas(&self) -> impl Fn() {
+    fn resize_canvas(&self) -> impl Fn() + use<> {
         let render_engine = Rc::clone(&self.render_engine);
         let waterfall = Rc::clone(&self.waterfall);
         move || {

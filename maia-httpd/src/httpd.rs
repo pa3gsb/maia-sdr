@@ -6,8 +6,8 @@
 use crate::app::AppState;
 use anyhow::Result;
 use axum::{
-    routing::{get, put},
     Router,
+    routing::{get, put},
 };
 use axum_server::tls_rustls::RustlsConfig;
 use bytes::Bytes;
@@ -103,6 +103,7 @@ impl Server {
                     .put(recording::put_recording_metadata)
                     .patch(recording::patch_recording_metadata),
             )
+            .route("/api/versions", get(version::get_versions))
             .route("/recording", get(recording::get_recording))
             .route("/version", get(version::get_version))
             // IQEngine viewer for IQ recording

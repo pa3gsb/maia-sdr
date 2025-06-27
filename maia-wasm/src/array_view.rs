@@ -1,6 +1,6 @@
 //! Transformation of Rust arrays to JS.
 
-use js_sys::{Float32Array, Object, Uint16Array, Uint8Array};
+use js_sys::{Float32Array, Object, Uint8Array, Uint16Array};
 use std::ops::Deref;
 use web_sys::WebGl2RenderingContext;
 
@@ -36,7 +36,7 @@ macro_rules! impl_array_view {
             type JS = $js;
             const GL_TYPE: u32 = $gl;
             unsafe fn view(rust: &[$rust]) -> $js {
-                <$js>::view(rust)
+                unsafe { <$js>::view(rust) }
             }
         }
     };

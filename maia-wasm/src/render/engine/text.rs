@@ -1,6 +1,6 @@
 use super::CanvasDims;
-use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 pub struct TextRender {
@@ -86,7 +86,7 @@ impl TextRender {
         let n = (texts.len() as f32 * width_px as f32 / height_px as f32)
             .sqrt()
             .round() as usize;
-        let m = (texts.len() + n - 1) / n;
+        let m = texts.len().div_ceil(n);
         let total_height_px = height_px_margin * n as u32;
         let total_width_px = width_px * m as u32;
         self.canvas.set_width(total_width_px);

@@ -1,7 +1,7 @@
 use super::{ProgramSource, RenderObject};
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::prelude::*;
 use web_sys::{
     HtmlCanvasElement, WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlTexture,
     WebGlVertexArrayObject, Window,
@@ -398,7 +398,7 @@ impl Current {
         if !self
             .program
             .as_ref()
-            .map_or(false, |p| Rc::ptr_eq(p, &object.program))
+            .is_some_and(|p| Rc::ptr_eq(p, &object.program))
         {
             // Program doesn't match. Load new program.
             self.use_program(gl, &object.program);
@@ -407,7 +407,7 @@ impl Current {
         if !self
             .vao
             .as_ref()
-            .map_or(false, |vao| Rc::ptr_eq(vao, &object.vao))
+            .is_some_and(|vao| Rc::ptr_eq(vao, &object.vao))
         {
             // VAO doesn't match. Load new VAO.
             self.bind_vertex_array(gl, &object.vao);

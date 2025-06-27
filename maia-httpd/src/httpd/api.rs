@@ -6,10 +6,11 @@ use super::{
     recording::{recorder_json, recording_metadata_json},
     spectrometer::spectrometer_json,
     time::time_json,
+    version,
 };
 use crate::app::AppState;
 use anyhow::Result;
-use axum::{extract::State, Json};
+use axum::{Json, extract::State};
 
 async fn api_json(state: &AppState) -> Result<maia_json::Api> {
     let ad9361 = {
@@ -22,6 +23,7 @@ async fn api_json(state: &AppState) -> Result<maia_json::Api> {
     let recording_metadata = recording_metadata_json(state).await;
     let geolocation = device_geolocation(state);
     let time = time_json()?;
+    let versions = version::versions(state.ip_core()).await?;
     Ok(maia_json::Api {
         ad9361,
         ddc,
@@ -30,6 +32,7 @@ async fn api_json(state: &AppState) -> Result<maia_json::Api> {
         recorder,
         recording_metadata,
         time,
+        versions,
     })
 }
 
