@@ -502,7 +502,7 @@ ad_ip_parameter axi_ad9361 CONFIG.ID 0
 #LVDS OR CMOS
 if {[info exists libre] || [info exists fishball]} {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 0
-ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 1
+ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 30
 } else {
 ad_ip_parameter axi_ad9361 CONFIG.CMOS_OR_LVDS_N 1
@@ -515,10 +515,10 @@ ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
 	
 if {![info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361 CONFIG.ADC_USERPORTS_DISABLE 0
-	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 1
-	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.ADC_DCFILTER_DISABLE 0
+	ad_ip_parameter axi_ad9361 CONFIG.ADC_IQCORRECTION_DISABLE 0
 	ad_ip_parameter axi_ad9361 CONFIG.DAC_USERPORTS_DISABLE 0
-	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 1
+	ad_ip_parameter axi_ad9361 CONFIG.DAC_IQCORRECTION_DISABLE 0
 }
 # Maia SDR core
 
@@ -552,6 +552,27 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT1_JITTER {133.663} CONFIG.CLKOUT1_PHASE_ERROR {91.100} \
                         CONFIG.CLKOUT2_JITTER {116.571} CONFIG.CLKOUT2_PHASE_ERROR {91.100} \
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
+
+if {[info exists 122_Experiment]} {
+set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_MONITOR {false} CONFIG.PRIM_SOURCE {Global_buffer} \
+CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT3_USED {true} CONFIG.NUM_OUT_CLKS {3} \
+   CONFIG.CLKOUT1_JITTER {260.522} \
+  CONFIG.CLKOUT1_PHASE_ERROR {301.601} \
+  CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {80} \
+  CONFIG.CLKOUT2_JITTER {235.916} \
+  CONFIG.CLKOUT2_PHASE_ERROR {301.601} \
+  CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {160} \
+  CONFIG.CLKOUT3_JITTER {222.688} \
+  CONFIG.CLKOUT3_PHASE_ERROR {301.601} \
+  CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {240} \
+  CONFIG.MMCM_CLKFBOUT_MULT_F {48.000} \
+  CONFIG.MMCM_CLKOUT0_DIVIDE_F {12.000} \
+  CONFIG.MMCM_CLKOUT1_DIVIDE {6} \
+  
+] [get_bd_cells maia_sdr_clk]
+}
+
+
 
 # connections
 if {[info exists libre] || [info exists fishball]} {
@@ -591,11 +612,18 @@ ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
 if {[info exists libre] || [info exists fishball]} {
 	
-	#ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
 	#ad_connect  axi_ad9361/l_clk   maia_sdr/sampling_clk
 
 } else {
 	#ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	add_files -norecurse  ../pluto/mux_clk.v
+	create_bd_cell -type module -reference muxclk clk_mode
+	ad_connect  axi_ad9361/l_clk clk_mode/in1
+	ad_connect  axi_ad9361/adc_r1_mode clk_mode/sel 
+	ad_connect  axi_ad9361/adc_valid_i0 clk_mode/In0
+
+	ad_connect  clk_mode/out maia_sdr/sampling_clk 
 	#ad_connect  axi_ad9361/l_clk maia_sdr/sampling_clk
 }
 ad_connect  sys_cpu_clk maia_sdr/s_axi_lite_clk
@@ -632,11 +660,12 @@ if {[info exists maia_iio]} {
 	ad_ip_instance util_cpack2 cpack
 
 	ad_connect axi_ad9361/adc_enable_i0 cpack/enable_0
+	ad_connect axi_ad9361/adc_enable_i1 cpack/enable_2
 	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
 
 ad_connect axi_ad9361/adc_data_i0 adc_i_slice/Din
 ad_connect axi_ad9361/adc_data_q0 adc_q_slice/Din
-ad_connect axi_ad9361/adc_valid_i0 maia_sdr/sampling_clk
+#ad_connect axi_ad9361/adc_valid_i0 maia_sdr/sampling_clk
 
 
 	ad_connect axi_ad9361/l_clk cpack/clk
@@ -832,55 +861,36 @@ if {[info exists maia_iio]} {
 	#
 
 	# ======================= 8BITS RX2 OUT  ============================
-	# I PART
-	ad_ip_instance xlslice shiftslicei2
-	ad_ip_parameter shiftslicei2 CONFIG.DIN_WIDTH 16
-	#MSB make a HIGH DC SPIKE...Try to use LSB
-	ad_ip_parameter shiftslicei2 CONFIG.DIN_FROM 7
-	ad_ip_parameter shiftslicei2 CONFIG.DIN_TO 0
-
-	ad_ip_parameter shiftslicei2 CONFIG.DOUT_WIDTH 8
-
-	ad_connect shiftslicei2/Din axi_ad9361/adc_data_i1
-
-	# Q PART
-	ad_ip_instance xlslice shiftsliceq2
-	ad_ip_parameter shiftsliceq2 CONFIG.DIN_WIDTH 16
-	ad_ip_parameter shiftsliceq2 CONFIG.DIN_FROM 7
-	ad_ip_parameter shiftsliceq2 CONFIG.DIN_TO 0
-	ad_ip_parameter shiftsliceq2 CONFIG.DOUT_WIDTH 8
-
-	ad_connect shiftsliceq2/Din axi_ad9361/adc_data_q1
-
-	#IQ combine 
-	ad_ip_instance xlconcat concatslice_iq2
-	ad_connect concatslice_iq2/In0 shiftslicei2/Dout
-	ad_connect concatslice_iq2/In1 shiftsliceq2/Dout
-
+	
+	
+	create_bd_cell -type module -reference cs12_cs8 rxcs22_cs8
+	ad_connect axi_ad9361/adc_data_i1 rxcs22_cs8/sample_in1
+	ad_connect axi_ad9361/adc_data_q1 rxcs22_cs8/sample_in2
+	
 	#Mux select CS8
 	#Select input depending on qo_enable
-	ad_ip_instance util_vector_logic logic_no_q02 [list \
+	ad_ip_instance util_vector_logic logic_no_q1 [list \
 	  C_OPERATION {not} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361/adc_enable_q0 logic_no_q02/Op1
+	ad_connect axi_ad9361/adc_enable_q1 logic_no_q1/Op1
 
-	#ad_ip_instance ad_bus_mux muxcs8 -> DOESNT WORK , USE create_bd_cell instead
-	create_bd_cell -type module -reference ad_bus_mux muxcs82
+	create_bd_cell -type module -reference ad_bus_mux muxcs8_2
+	ad_connect muxcs8_2/select_path logic_no_q1/Res
 
-	ad_connect muxcs82/select_path logic_no_q02/Res
 	#First input CS16 - > I0 -> I0
-	ad_connect axi_ad9361/adc_data_i1 muxcs82/data_in_0
-	ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_0
-	ad_connect axi_ad9361/adc_enable_q1 muxcs82/enable_in_0
+	ad_connect axi_ad9361/adc_data_i1 muxcs8_2/data_in_0
+	ad_connect axi_ad9361/adc_valid_i1 muxcs8_2/valid_in_0
+	ad_connect axi_ad9361/adc_enable_q1 muxcs8_2/enable_in_0
+
 	#Second input CS8 - > I0+Q0
-	ad_connect concatslice_iq2/Dout muxcs82/data_in_1
-	ad_connect axi_ad9361/adc_valid_i1 muxcs82/valid_in_1
-	ad_connect GND muxcs82/enable_in_1
+	ad_connect rxcs22_cs8/combined_out muxcs8_2/data_in_1
+	ad_connect axi_ad9361/adc_valid_i1 muxcs8_2/valid_in_1
+	ad_connect GND muxcs8_2/enable_in_1
 
 	#OUT
-	#ad_connect muxcs82/valid_out cpack/fifo_wr_en
-	ad_connect muxcs82/data_out cpack/fifo_wr_data_2
-	#ad_connect muxcs82/enable_out cpack/enable_3
+	ad_connect axi_ad9361/adc_data_q1 cpack/fifo_wr_data_3
+	ad_connect muxcs8_2/data_out cpack/fifo_wr_data_2
+	ad_connect muxcs8_2/enable_out cpack/enable_3
 
 	# ======================= 8BITS TX2 OUT  ============================
 	# I PART
