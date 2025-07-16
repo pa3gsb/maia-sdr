@@ -541,19 +541,10 @@ ad_ip_parameter adc_q_slice CONFIG.DIN_FROM 11
 
 # Maia SDR clocking
 
-create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 maia_sdr_clk
-set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_MONITOR {false} CONFIG.PRIM_SOURCE {Global_buffer} \
-                        CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT3_USED {true} CONFIG.NUM_OUT_CLKS {3} \
-                        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {62.500} CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {125.000} \
-                        CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {187.5} \
-                        CONFIG.PRIMITIVE {MMCM} CONFIG.MMCM_DIVCLK_DIVIDE {1} CONFIG.MMCM_CLKFBOUT_MULT_F {11.250} \
-                        CONFIG.MMCM_CLKOUT0_DIVIDE_F {18.000} CONFIG.MMCM_CLKOUT1_DIVIDE {9} \
-                        CONFIG.MMCM_CLKOUT3_DIVIDE {6} \
-                        CONFIG.CLKOUT1_JITTER {133.663} CONFIG.CLKOUT1_PHASE_ERROR {91.100} \
-                        CONFIG.CLKOUT2_JITTER {116.571} CONFIG.CLKOUT2_PHASE_ERROR {91.100} \
-                        CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
+
 
 if {[info exists 122_Experiment]} {
+	create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 maia_sdr_clk
 set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_MONITOR {false} CONFIG.PRIM_SOURCE {Global_buffer} \
 CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT3_USED {true} CONFIG.NUM_OUT_CLKS {3} \
    CONFIG.CLKOUT1_JITTER {260.522} \
@@ -567,9 +558,19 @@ CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT3_USED {true} CONFIG.NUM_OUT_CLKS {3} \
   CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {240} \
   CONFIG.MMCM_CLKFBOUT_MULT_F {48.000} \
   CONFIG.MMCM_CLKOUT0_DIVIDE_F {12.000} \
-  CONFIG.MMCM_CLKOUT1_DIVIDE {6} \
-  
-] [get_bd_cells maia_sdr_clk]
+  CONFIG.MMCM_CLKOUT1_DIVIDE {6}] [get_bd_cells maia_sdr_clk]
+} else {
+create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 maia_sdr_clk
+set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_MONITOR {false} CONFIG.PRIM_SOURCE {Global_buffer} \
+                        CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT3_USED {true} CONFIG.NUM_OUT_CLKS {3} \
+                        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {62.500} CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {125.000} \
+                        CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {187.5} \
+                        CONFIG.PRIMITIVE {MMCM} CONFIG.MMCM_DIVCLK_DIVIDE {1} CONFIG.MMCM_CLKFBOUT_MULT_F {11.250} \
+                        CONFIG.MMCM_CLKOUT0_DIVIDE_F {18.000} CONFIG.MMCM_CLKOUT1_DIVIDE {9} \
+                        CONFIG.MMCM_CLKOUT3_DIVIDE {6} \
+                        CONFIG.CLKOUT1_JITTER {133.663} CONFIG.CLKOUT1_PHASE_ERROR {91.100} \
+                        CONFIG.CLKOUT2_JITTER {116.571} CONFIG.CLKOUT2_PHASE_ERROR {91.100} \
+                        CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 }
 
 
@@ -610,7 +611,7 @@ ad_connect  axi_ad9361/l_clk axi_ad9361/clk
 ad_connect  adc_i_slice/Dout maia_sdr/re_in
 ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
-if {[info exists libre] || [info exists fishball]} {
+if { [info exists fishball]} {
 	
 	ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
 	#ad_connect  axi_ad9361/l_clk   maia_sdr/sampling_clk
