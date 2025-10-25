@@ -1,7 +1,7 @@
 VIVADO := vivado -mode batch -source
 IP_CORE_VERSION := $(shell PYTHONPATH="../../:${PYTHONPATH}" python3 -m maia_hdl.maia_sdr_version)
 
-configs = default maia_iio
+configs = default maia_iio maia_iio_lite
 
 all: $(configs)
 
