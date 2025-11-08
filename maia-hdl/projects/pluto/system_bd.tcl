@@ -553,8 +553,59 @@ ad_ip_parameter adc_q_slice CONFIG.DOUT_WIDTH 12
 ad_ip_parameter adc_q_slice CONFIG.DIN_FROM 11
 
 # Maia SDR clocking
+# https://analogdevicesinc.github.io/hdl/projects/fmcomms2/index.html
+# FixMe : surely need a FIFO for DAC and ADC
+# https://analogdevicesinc.github.io/hdl/library/util_rfifo/index.html#util-rfifo
+# interface clock divider to generate sampling clock
+# interface runs at 4x in 2r2t mode, and 2x in 1r1t mode
 
+ad_ip_instance xlconcat util_ad9361_divclk_sel_concat
+ad_ip_parameter util_ad9361_divclk_sel_concat CONFIG.NUM_PORTS 2
+ad_connect axi_ad9361/adc_r1_mode util_ad9361_divclk_sel_concat/In0
+ad_connect axi_ad9361/dac_r1_mode util_ad9361_divclk_sel_concat/In1
 
+ad_ip_instance util_reduced_logic util_ad9361_divclk_sel
+ad_ip_parameter util_ad9361_divclk_sel CONFIG.C_SIZE 2
+
+ad_connect util_ad9361_divclk_sel_concat/dout util_ad9361_divclk_sel/Op1
+
+ad_ip_instance util_clkdiv util_ad9361_divclk
+ad_ip_parameter util_ad9361_divclk CONFIG.SEL_0_DIV 4
+ad_ip_parameter util_ad9361_divclk CONFIG.SEL_1_DIV 2
+
+ad_connect util_ad9361_divclk_sel/Res util_ad9361_divclk/clk_sel
+ad_connect axi_ad9361/l_clk util_ad9361_divclk/clk
+
+# resets at divided clock
+
+ad_ip_instance proc_sys_reset util_ad9361_divclk_reset
+ad_connect sys_rstgen/peripheral_aresetn util_ad9361_divclk_reset/ext_reset_in
+ad_connect util_ad9361_divclk/clk_out util_ad9361_divclk_reset/slowest_sync_clk
+
+# adc-path wfifo
+
+ad_ip_instance util_wfifo util_ad9361_adc_fifo
+ad_ip_parameter util_ad9361_adc_fifo CONFIG.NUM_OF_CHANNELS 4
+ad_ip_parameter util_ad9361_adc_fifo CONFIG.DIN_ADDRESS_WIDTH 4
+ad_ip_parameter util_ad9361_adc_fifo CONFIG.DIN_DATA_WIDTH 16
+ad_ip_parameter util_ad9361_adc_fifo CONFIG.DOUT_DATA_WIDTH 16
+ad_connect axi_ad9361/l_clk util_ad9361_adc_fifo/din_clk
+ad_connect axi_ad9361/rst util_ad9361_adc_fifo/din_rst
+ad_connect util_ad9361_divclk/clk_out util_ad9361_adc_fifo/dout_clk
+ad_connect util_ad9361_divclk_reset/peripheral_aresetn util_ad9361_adc_fifo/dout_rstn
+ad_connect axi_ad9361/adc_enable_i0 util_ad9361_adc_fifo/din_enable_0
+ad_connect axi_ad9361/adc_valid_i0 util_ad9361_adc_fifo/din_valid_0
+ad_connect axi_ad9361/adc_data_i0 util_ad9361_adc_fifo/din_data_0
+ad_connect axi_ad9361/adc_enable_q0 util_ad9361_adc_fifo/din_enable_1
+ad_connect axi_ad9361/adc_valid_q0 util_ad9361_adc_fifo/din_valid_1
+ad_connect axi_ad9361/adc_data_q0 util_ad9361_adc_fifo/din_data_1
+ad_connect axi_ad9361/adc_enable_i1 util_ad9361_adc_fifo/din_enable_2
+ad_connect axi_ad9361/adc_valid_i1 util_ad9361_adc_fifo/din_valid_2
+ad_connect axi_ad9361/adc_data_i1 util_ad9361_adc_fifo/din_data_2
+ad_connect axi_ad9361/adc_enable_q1 util_ad9361_adc_fifo/din_enable_3
+ad_connect axi_ad9361/adc_valid_q1 util_ad9361_adc_fifo/din_valid_3
+ad_connect axi_ad9361/adc_data_q1 util_ad9361_adc_fifo/din_data_3
+ad_connect util_ad9361_adc_fifo/din_ovf axi_ad9361/adc_dovf
 
 if {[info exists 122_Experiment]} {
 	create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 maia_sdr_clk
@@ -628,7 +679,7 @@ ad_connect  adc_q_slice/Dout maia_sdr/im_in
 # https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/interface_timing_validation
 if { [info exists libre] || [info exists fishball]} {
 	
-	ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
+	ad_connect maia_sdr/sampling_clk  util_ad9361_divclk/clk_out
 	#ad_connect  axi_ad9361/l_clk   maia_sdr/sampling_clk
 	#By diving by 4, spectrum is ok but 60Mh->15Mhz
 	#add_files -norecurse  ../pluto/clk_div4.v
@@ -676,6 +727,8 @@ ad_connect  sys_cpu_reset maia_sdr_clk/reset
 
 if {[info exists maia_iio]} {
 
+	
+
 	ad_ip_instance axi_dmac axi_ad9361_dac_dma
 	ad_ip_parameter axi_ad9361_dac_dma CONFIG.DMA_TYPE_SRC 0
 	ad_ip_parameter axi_ad9361_dac_dma CONFIG.DMA_TYPE_DEST 1
@@ -696,25 +749,38 @@ if {[info exists maia_iio]} {
 	ad_ip_parameter axi_ad9361_adc_dma CONFIG.AXI_SLICE_DEST 0
 	ad_ip_parameter axi_ad9361_adc_dma CONFIG.DMA_2D_TRANSFER 0
 	ad_ip_parameter axi_ad9361_adc_dma CONFIG.DMA_DATA_WIDTH_SRC 64
-	ad_ip_instance util_cpack2 cpack
 
-	ad_connect axi_ad9361/adc_enable_i0 cpack/enable_0
-	ad_connect axi_ad9361/adc_enable_i1 cpack/enable_2
-	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
+	ad_ip_instance util_cpack2 util_ad9361_adc_pack { \
+  NUM_OF_CHANNELS 4 \
+  SAMPLE_DATA_WIDTH 16 \
+}
+ad_connect util_ad9361_divclk/clk_out util_ad9361_adc_pack/clk
+ad_connect util_ad9361_divclk_reset/peripheral_reset util_ad9361_adc_pack/reset
 
-ad_connect axi_ad9361/adc_data_i0 adc_i_slice/Din
-ad_connect axi_ad9361/adc_data_q0 adc_q_slice/Din
-#ad_connect axi_ad9361/adc_valid_i0 maia_sdr/sampling_clk
+#Go through FIR -> remove this link
+#ad_connect util_ad9361_adc_fifo/dout_valid_0 util_ad9361_adc_pack/fifo_wr_en
 
+ad_connect util_ad9361_adc_pack/fifo_wr_overflow util_ad9361_adc_fifo/dout_ovf
 
-	ad_connect axi_ad9361/l_clk cpack/clk
-	#ad_connect axi_ad9361/adc_valid_i0 cpack/clk --> NOT WORKING
-	ad_connect axi_ad9361/rst cpack/reset
-	ad_connect axi_ad9361_adc_dma/fifo_wr cpack/packed_fifo_wr
+# for {set i 0} {$i < 4} {incr i} {
+#  ad_connect util_ad9361_adc_fifo/dout_enable_$i util_ad9361_adc_pack/enable_$i
+#  ad_connect util_ad9361_adc_fifo/dout_data_$i util_ad9361_adc_pack/fifo_wr_data_$i
+# }
 
+	
+ad_connect util_ad9361_adc_fifo/dout_data_0 adc_i_slice/Din
+ad_connect util_ad9361_adc_fifo/dout_data_1 adc_q_slice/Din
+
+ad_connect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
+ad_connect util_ad9361_adc_fifo/dout_enable_2 util_ad9361_adc_pack/enable_2
+	
+
+ad_connect axi_ad9361_adc_dma/fifo_wr util_ad9361_adc_pack/packed_fifo_wr	
 	ad_connect  axi_ad9361/l_clk tx_upack/clk
+	#ad_connect util_ad9361_divclk/clk_out tx_upack/clk
 	ad_connect  axi_ad9361/rst tx_upack/reset
-	ad_connect tx_upack/s_axis  axi_ad9361_dac_dma/m_axis
+	#FIXME JUST FOR TEST
+			#ad_connect tx_upack/s_axis  axi_ad9361_dac_dma/m_axis
 
 	ad_ip_instance util_vector_logic logic_or [list \
 	  C_OPERATION {or} \
@@ -728,9 +794,15 @@ ad_connect axi_ad9361/adc_data_q0 adc_q_slice/Din
 
 	ad_connect  tx_upack/fifo_rd_underflow axi_ad9361/dac_dunf
 
-	ad_connect  axi_ad9361/l_clk axi_ad9361_adc_dma/fifo_wr_clk
+	ad_connect  util_ad9361_divclk/clk_out axi_ad9361_adc_dma/fifo_wr_clk
+	
 	ad_connect  axi_ad9361/l_clk axi_ad9361_dac_dma/m_axis_aclk
-	ad_connect  cpack/fifo_wr_overflow axi_ad9361/adc_dovf
+
+
+	#ad_connect util_ad9361_divclk/clk_out axi_ad9361_adc_dma/fifo_wr_clk
+	#ad_connect util_ad9361_divclk/clk_out axi_ad9361_dac_dma/m_axis_aclk
+
+	
 
 	ad_connect sys_cpu_resetn axi_ad9361_adc_dma/m_dest_axi_aresetn
 	ad_connect sys_cpu_resetn axi_ad9361_dac_dma/m_src_axi_aresetn
@@ -786,6 +858,8 @@ if {[info exists maia_iio]} {
 }
 
 
+
+
 if {[info exists maia_iio]} {
 
 	# ======================= 8BITS RX OUT  ============================
@@ -799,27 +873,22 @@ if {[info exists maia_iio]} {
 	ad_ip_instance util_vector_logic logic_no_q0 [list \
 	  C_OPERATION {not} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361/adc_enable_q0 logic_no_q0/Op1
-
+	ad_connect util_ad9361_adc_fifo/dout_enable_1 logic_no_q0/Op1
 	#ad_ip_instance ad_bus_mux muxcs8 -> DOESNT WORK , USE create_bd_cell instead
 	add_files -norecurse  ../../adi-hdl/library/common/ad_bus_mux.v
 	create_bd_cell -type module -reference ad_bus_mux muxcs8
 	ad_connect muxcs8/select_path logic_no_q0/Res
 
 	#First input CS16 - > I0 -> I0
-	#ad_connect axi_ad9361/adc_data_i0 muxcs8/data_in_0
-	#ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_0
-	ad_connect axi_ad9361/adc_enable_q0 muxcs8/enable_in_0
+	ad_connect util_ad9361_adc_fifo/dout_enable_0 muxcs8/enable_in_0
 
 	#Second input CS8 - > I0+Q0
-	#ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
-	#ad_connect axi_ad9361/adc_valid_i0 muxcs8/valid_in_1
 	ad_connect GND muxcs8/enable_in_1
 
 	#OUT
-	ad_connect muxcs8/valid_out cpack/fifo_wr_en
-	ad_connect muxcs8/data_out cpack/fifo_wr_data_0
-	ad_connect muxcs8/enable_out cpack/enable_1
+	ad_connect muxcs8/valid_out util_ad9361_adc_pack/fifo_wr_en
+	ad_connect muxcs8/data_out util_ad9361_adc_pack/fifo_wr_data_0
+	ad_connect muxcs8/enable_out util_ad9361_adc_pack/enable_1
 
 	# ======================= 8BITS TX OUT  ============================
 	# I PART
@@ -903,33 +972,33 @@ if {[info exists maia_iio]} {
 	
 	
 	create_bd_cell -type module -reference cs12_cs8 rxcs22_cs8
-	ad_connect axi_ad9361/adc_data_i1 rxcs22_cs8/sample_in1
-	ad_connect axi_ad9361/adc_data_q1 rxcs22_cs8/sample_in2
+	ad_connect util_ad9361_adc_fifo/dout_data_2 rxcs22_cs8/sample_in1
+	ad_connect util_ad9361_adc_fifo/dout_data_3 rxcs22_cs8/sample_in2
 	
 	#Mux select CS8
 	#Select input depending on qo_enable
 	ad_ip_instance util_vector_logic logic_no_q1 [list \
 	  C_OPERATION {not} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361/adc_enable_q1 logic_no_q1/Op1
+	ad_connect util_ad9361_adc_fifo/dout_enable_3 logic_no_q1/Op1
 
 	create_bd_cell -type module -reference ad_bus_mux muxcs8_2
 	ad_connect muxcs8_2/select_path logic_no_q1/Res
 
 	#First input CS16 - > I0 -> I0
-	ad_connect axi_ad9361/adc_data_i1 muxcs8_2/data_in_0
-	ad_connect axi_ad9361/adc_valid_i1 muxcs8_2/valid_in_0
-	ad_connect axi_ad9361/adc_enable_q1 muxcs8_2/enable_in_0
+	ad_connect util_ad9361_adc_fifo/dout_data_2 muxcs8_2/data_in_0
+	ad_connect util_ad9361_adc_fifo/dout_valid_2 muxcs8_2/valid_in_0
+	ad_connect util_ad9361_adc_fifo/dout_enable_3 muxcs8_2/enable_in_0
 
 	#Second input CS8 - > I0+Q0
 	ad_connect rxcs22_cs8/combined_out muxcs8_2/data_in_1
-	ad_connect axi_ad9361/adc_valid_i1 muxcs8_2/valid_in_1
+	ad_connect util_ad9361_adc_fifo/dout_valid_2 muxcs8_2/valid_in_1
 	ad_connect GND muxcs8_2/enable_in_1
 
 	#OUT
-	ad_connect axi_ad9361/adc_data_q1 cpack/fifo_wr_data_3
-	ad_connect muxcs8_2/data_out cpack/fifo_wr_data_2
-	ad_connect muxcs8_2/enable_out cpack/enable_3
+	ad_connect util_ad9361_adc_fifo/dout_data_2 util_ad9361_adc_pack/fifo_wr_data_3
+	ad_connect muxcs8_2/data_out util_ad9361_adc_pack/fifo_wr_data_2
+	ad_connect muxcs8_2/enable_out util_ad9361_adc_pack/enable_3
 
 	# ======================= 8BITS TX2 OUT  ============================
 	# I PART
@@ -1032,6 +1101,7 @@ if {[info exists maia_iio]} {
 
 		ad_ip_instance xlslice interp_slice
 		ad_connect axi_ad9361/l_clk tx_fir_interpolator/aclk
+		#ad_connect util_ad9361_divclk/clk_out tx_fir_interpolator/aclk
 
 		ad_connect muxcs8_tx_i/enable_out tx_fir_interpolator/dac_enable_0
 		ad_connect axi_ad9361/dac_valid_i0 tx_fir_interpolator/dac_valid_0
@@ -1047,10 +1117,50 @@ if {[info exists maia_iio]} {
 		ad_connect axi_ad9361/dac_data_i0 tx_fir_interpolator/data_out_0
 		ad_connect axi_ad9361/dac_data_q0 tx_fir_interpolator/data_out_1
 	}
+	if {[info exists with_tx_fir_custom]} {
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_i0]]]	
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins axi_ad9361/dac_data_q0]]]	   
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op1]]]
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op2]]]	   	   
+		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins tx_upack/fifo_rd_en]]]
+
+
+		set rrc_2interpol [ create_bd_cell -type ip -vlnv xilinx.com:ip:fir_compiler:7.2 rrc_2interpol ]
+set_property -dict [ list \
+   CONFIG.Clock_Frequency {61.44} \
+   CONFIG.CoefficientSource {COE_File} \
+   CONFIG.Coefficient_File {../../../../../../../pluto/coefile_int.coe} \
+   CONFIG.Coefficient_Fractional_Bits {0} \
+   CONFIG.Coefficient_Sets {1} \
+   CONFIG.Coefficient_Sign {Signed} \
+   CONFIG.Coefficient_Structure {Inferred} \
+   CONFIG.Coefficient_Width {19} \
+   CONFIG.ColumnConfig {8} \
+   CONFIG.DATA_Has_TLAST {Not_Required} \
+   CONFIG.Data_Fractional_Bits {0} \
+   CONFIG.Decimation_Rate {1} \
+   CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
+   CONFIG.Filter_Type {Interpolation} \
+   CONFIG.Interpolation_Rate {8} \
+   CONFIG.M_DATA_Has_TREADY {true} \
+   CONFIG.Number_Channels {1} \
+   CONFIG.Number_Paths {2} \
+   CONFIG.Output_Rounding_Mode {Symmetric_Rounding_to_Zero} \
+   CONFIG.Output_Width {16} \
+   CONFIG.Quantization {Integer_Coefficients} \
+   CONFIG.RateSpecification {Frequency_Specification} \
+   CONFIG.S_DATA_Has_FIFO {true} \
+   CONFIG.Sample_Frequency {15.36} \
+   CONFIG.Zero_Pack_Factor {1} \
+ ] $rrc_2interpol
+ad_connect  axi_ad9361/l_clk  rrc_2interpol/aclk 
+
+		
+	}
 if {[info exists with_rx_fir]} {
 			
 	# TODO ; delete existing nodes
-	#ad_connect axi_ad9361/adc_data_q0 cpack/fifo_wr_data_1
+	#ad_connect axi_ad9361/adc_data_q0 util_ad9361_adc_pack/fifo_wr_data_1
 	#ad_connect  logic_or/Op1  axi_ad9361/dac_valid_i0
 	#ad_connect axi_ad9361/adc_data_i0 rxcs12_cs8/sample_in1
 	#ad_connect axi_ad9361/adc_data_q0 rxcs12_cs8/sample_in2
@@ -1060,17 +1170,18 @@ if {[info exists with_rx_fir]} {
 	ad_add_decimation_filter "rx_fir_decimator" 8 2 1 {61.44} {61.44} \
                          "$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
 	ad_ip_instance xlslice decim_slice
-	ad_connect axi_ad9361/l_clk rx_fir_decimator/aclk
+	#ad_connect axi_ad9361/l_clk rx_fir_decimator/aclk
+	ad_connect util_ad9361_divclk/clk_out rx_fir_decimator/aclk
 	ad_connect axi_ad9361/up_adc_gpio_out decim_slice/Din
 	ad_connect rx_fir_decimator/active decim_slice/Dout
 
 	
-	ad_connect axi_ad9361/adc_valid_i0 rx_fir_decimator/valid_in_0
-	ad_connect axi_ad9361/adc_enable_i0 rx_fir_decimator/enable_in_0
-	ad_connect axi_ad9361/adc_data_i0 rx_fir_decimator/data_in_0
-	ad_connect axi_ad9361/adc_valid_q0 rx_fir_decimator/valid_in_1
-	ad_connect axi_ad9361/adc_enable_q0 rx_fir_decimator/enable_in_1
-	ad_connect axi_ad9361/adc_data_q0 rx_fir_decimator/data_in_1
+	ad_connect util_ad9361_adc_fifo/dout_valid_0 rx_fir_decimator/valid_in_0
+	ad_connect util_ad9361_adc_fifo/dout_enable_0 rx_fir_decimator/enable_in_0
+	ad_connect util_ad9361_adc_fifo/dout_data_0 rx_fir_decimator/data_in_0
+	ad_connect util_ad9361_adc_fifo/dout_valid_1 rx_fir_decimator/valid_in_1
+	ad_connect util_ad9361_adc_fifo/dout_enable_1 rx_fir_decimator/enable_in_1
+	ad_connect util_ad9361_adc_fifo/dout_data_1 rx_fir_decimator/data_in_1
 
 	ad_connect rx_fir_decimator/data_out_0 muxcs8/data_in_0
 	ad_connect rx_fir_decimator/valid_out_0 muxcs8/valid_in_0
@@ -1080,7 +1191,7 @@ if {[info exists with_rx_fir]} {
 	ad_connect rx_fir_decimator/data_out_1 rxcs12_cs8/sample_in2
 
 	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
-	ad_connect rx_fir_decimator/data_out_1 cpack/fifo_wr_data_1
+	ad_connect rx_fir_decimator/data_out_1 util_ad9361_adc_pack/fifo_wr_data_1
 	}	
 }
 
@@ -1106,7 +1217,8 @@ ad_ip_parameter interclk_i CONFIG.HAS_TLAST 0
 ad_ip_parameter interclk_i CONFIG.TDATA_NUM_BYTES 2
 ad_ip_parameter interclk_i CONFIG.SYNCHRONIZATION_STAGES 4 
 
-ad_connect interclk_i/m_axis_aclk  axi_ad9361/l_clk 
+#ad_connect interclk_i/m_axis_aclk  axi_ad9361/l_clk 
+ad_connect interclk_i/m_axis_aclk  util_ad9361_divclk/clk_out
 ad_connect sys_cpu_resetn interclk_i/s_axis_aresetn 
 ad_connect  maia_sdr/decim_re_out interclk_i/s_axis_tdata
 ad_connect  maia_sdr_clk/clk_out1 interclk_i/s_axis_aclk
@@ -1117,11 +1229,11 @@ ad_connect interclk_i/m_axis_tvalid mux_decim_i/valid_in_1
 
 	
 	ad_connect mux_decim_i/select_path decim_slice/Dout
-	ad_connect axi_ad9361/adc_valid_i0 mux_decim_i/valid_in_0
-	ad_connect axi_ad9361/adc_enable_i0 mux_decim_i/enable_in_0
-	ad_connect axi_ad9361/adc_data_i0 mux_decim_i/data_in_0
+	ad_connect util_ad9361_adc_fifo/dout_valid_0 mux_decim_i/valid_in_0
+	ad_connect util_ad9361_adc_fifo/dout_enable_0 mux_decim_i/enable_in_0
+	ad_connect util_ad9361_adc_fifo/dout_data_0 mux_decim_i/data_in_0
 	#ad_connect maia_sdr/decim_strobe_out mux_decim_i/valid_in_1
-	ad_connect axi_ad9361/adc_enable_i0 mux_decim_i/enable_in_1
+	ad_connect util_ad9361_adc_fifo/dout_enable_0 mux_decim_i/enable_in_1
 	#ad_connect maia_sdr/decim_re_out mux_decim_i/data_in_1
 
 #Q	
@@ -1136,7 +1248,8 @@ ad_ip_parameter interclk_q CONFIG.HAS_TLAST 0
 ad_ip_parameter interclk_q CONFIG.TDATA_NUM_BYTES 2
 ad_ip_parameter interclk_q CONFIG.SYNCHRONIZATION_STAGES 4 
 
-ad_connect interclk_q/m_axis_aclk  axi_ad9361/l_clk 
+#ad_connect interclk_q/m_axis_aclk  axi_ad9361/l_clk 
+ad_connect interclk_q/m_axis_aclk  util_ad9361_divclk/clk_out
 ad_connect sys_cpu_resetn interclk_q/s_axis_aresetn 
 ad_connect  maia_sdr/decim_im_out interclk_q/s_axis_tdata
 ad_connect  maia_sdr_clk/clk_out1 interclk_q/s_axis_aclk
@@ -1145,12 +1258,12 @@ ad_connect interclk_q/m_axis_tdata mux_decim_q/data_in_1
 ad_connect interclk_q/m_axis_tvalid mux_decim_q/valid_in_1
 
 	ad_connect mux_decim_q/select_path decim_slice/Dout
-	ad_connect axi_ad9361/adc_valid_q0 mux_decim_q/valid_in_0
-	ad_connect axi_ad9361/adc_enable_q0 mux_decim_q/enable_in_0
-	ad_connect axi_ad9361/adc_data_q0 mux_decim_q/data_in_0
+	ad_connect util_ad9361_adc_fifo/dout_valid_1 mux_decim_q/valid_in_0
+	ad_connect util_ad9361_adc_fifo/dout_enable_1 mux_decim_q/enable_in_0
+	ad_connect util_ad9361_adc_fifo/dout_data_1 mux_decim_q/data_in_0
 
 	#ad_connect maia_sdr/decim_strobe_out mux_decim_q/valid_in_1
-	ad_connect axi_ad9361/adc_enable_q0 mux_decim_q/enable_in_1
+	ad_connect util_ad9361_adc_fifo/dout_enable_1 mux_decim_q/enable_in_1
 	#ad_connect maia_sdr/decim_im_out mux_decim_q/data_in_1
 
 	ad_connect mux_decim_i/data_out muxcs8/data_in_0
@@ -1161,7 +1274,7 @@ ad_connect interclk_q/m_axis_tvalid mux_decim_q/valid_in_1
 	ad_connect mux_decim_q/data_out rxcs12_cs8/sample_in2
 
 	ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
-	ad_connect mux_decim_q/data_out cpack/fifo_wr_data_1
+	ad_connect mux_decim_q/data_out util_ad9361_adc_pack/fifo_wr_data_1
 		
 }
 

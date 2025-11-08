@@ -67,7 +67,7 @@ set_property  -dict {PACKAGE_PIN  N15  IOSTANDARD LVCMOS25} [get_ports pl_spi_mi
 set_property  -dict {PACKAGE_PIN  N16  IOSTANDARD LVCMOS25} [get_ports pl_spi_mosi]
 
 
-create_clock -period 8.000 -name rx_clk [get_ports rx_clk_in_p]
+#create_clock -period 8.000 -name rx_clk [get_ports rx_clk_in_p]
 
 # probably gone in 2016.4
 
@@ -86,3 +86,9 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i
 
 set_false_path -from [get_pins {i_system_wrapper/system_i/manual_decim/U0/gpio_core_1/Not_Dual.gpio_Data_Out_reg[0]/C}]
 
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/i_xfer_cntrl/d_data_cntrl_int_reg[0]/C}]
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/i_xfer_cntrl/d_data_cntrl_int_reg[0]/C}]
+
+# clocks
+
+create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
