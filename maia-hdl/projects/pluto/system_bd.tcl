@@ -1032,7 +1032,7 @@ if {[info exists maia_iio]} {
 	ad_connect GND muxcs8_2/enable_in_1
 
 	#OUT
-	ad_connect util_ad9361_adc_fifo/dout_data_2 util_ad9361_adc_pack/fifo_wr_data_3
+	ad_connect util_ad9361_adc_fifo/dout_data_3 util_ad9361_adc_pack/fifo_wr_data_3
 	ad_connect muxcs8_2/data_out util_ad9361_adc_pack/fifo_wr_data_2
 	ad_connect muxcs8_2/enable_out util_ad9361_adc_pack/enable_3
 
