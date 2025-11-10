@@ -1133,8 +1133,11 @@ if {[info exists maia_iio]} {
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op1]]]
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins logic_or/Op2]]]	   	   
 		delete_bd_objs [get_bd_nets -of_objects [find_bd_objs -relation connected_to [get_bd_pins util_ad9361_dac_upack/fifo_rd_en]]]	   
-		ad_add_interpolation_filter "tx_fir_interpolator" 8 2 1 {61.44} {7.68} \
-									"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
+		#ad_add_interpolation_filter "tx_fir_interpolator" 8 2 1 {61.44} {7.68} \
+		#							"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
+
+		ad_add_interpolation_filter "tx_fir_interpolator" 32 2 1 {61.44} {1.92} \
+                             "$ad_hdl_dir/../projects/pluto/filter32.coe"
 
 		ad_ip_instance xlslice interp_slice
 		
