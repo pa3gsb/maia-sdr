@@ -703,45 +703,8 @@ ad_connect  adc_q_slice/Dout maia_sdr/im_in
 
 # https://github.com/analogdevicesinc/hdl/commit/bad4eb51a9397aab2a9a01b771b3cd181422e6f6
 # https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/interface_timing_validation
-if { [info exists libre] || [info exists fishball]} {
-	
-	ad_connect maia_sdr/sampling_clk  util_ad9361_divclk/clk_out
-	#ad_connect  axi_ad9361/l_clk   maia_sdr/sampling_clk
-	#By diving by 4, spectrum is ok but 60Mh->15Mhz
-	#add_files -norecurse  ../pluto/clk_div4.v
-	#create_bd_cell -type module -reference ClockDividerBy4 lvds_clck2
+ad_connect maia_sdr/sampling_clk  util_ad9361_divclk/clk_out
 
-	#ad_connect  lvds_clck2/clk_in  axi_ad9361/l_clk
-	#ad_connect  lvds_clck2/rst  sys_cpu_reset
-	#ad_connect  lvds_clck2/clk_out  maia_sdr/sampling_clk
-
-} else {
-	#ad_connect  axi_ad9361/adc_valid_i0  maia_sdr/sampling_clk
-
-	add_files -norecurse  ../pluto/mux_clk.v
-	create_bd_cell -type module -reference muxclk clk_mode
-	ad_connect  axi_ad9361/l_clk clk_mode/in1
-	ad_connect  axi_ad9361/adc_r1_mode clk_mode/sel 
-	ad_connect  axi_ad9361/adc_valid_i0 clk_mode/in0
-	ad_connect  clk_mode/out maia_sdr/sampling_clk 
-
-	#add_files -norecurse  ../pluto/clk_mode2.v
-	#create_bd_cell -type module -reference clk_div_mux_simple clk_mode
-	#ad_connect  axi_ad9361/l_clk clk_mode/clk
-	#ad_connect  axi_ad9361/adc_r1_mode clk_mode/sel 
-	#ad_connect  axi_ad9361/rst clk_mode/reset
-	#ad_connect  clk_mode/clk_out maia_sdr/sampling_clk 
-
-	#add_files -norecurse  ../pluto/clk_div2.v 
-	#create_bd_cell -type module -reference ClockDividerBy2 clkdiv2
-	#ad_connect  axi_ad9361/l_clk clkdiv2/clk_in
-	#ad_connect  axi_ad9361/rst clkdiv2/rst
-	#ad_connect  clkdiv2/clk_out maia_sdr/sampling_clk 
-
-
-	
-	
-}
 ad_connect  sys_cpu_clk maia_sdr/s_axi_lite_clk
 ad_connect  sys_cpu_reset maia_sdr/s_axi_lite_rst
 ad_connect  maia_sdr_clk/clk_out1 maia_sdr/clk
