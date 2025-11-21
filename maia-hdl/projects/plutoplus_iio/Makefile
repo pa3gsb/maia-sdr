@@ -17,11 +17,15 @@ LIB_DEPS += axi_ad9361
 LIB_DEPS += axi_dmac
 LIB_DEPS += util_pack/util_cpack2
 LIB_DEPS += util_pack/util_upack2
+LIB_DEPS += xilinx/util_clkdiv
+LIB_DEPS += util_rfifo
+LIB_DEPS += util_wfifo
+
 
 include ../../adi-hdl/projects/scripts/project-xilinx.mk
 
 
-DEST = ../../../../tezuka_fw/board/plutoplus/bitstream
+DEST = ../../../../tezuka_fw/board/tezuka/plutoplus/bitstream
 
 ip_cores:
 	$(MAKE) -C ../../ip

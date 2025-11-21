@@ -93,7 +93,8 @@ set_property -dict {PACKAGE_PIN U7 IOSTANDARD LVCMOS33} [get_ports {GPIOB[1]}];
 set_property -dict {PACKAGE_PIN V5 IOSTANDARD LVCMOS33} [get_ports {GPIOB[0]}];
 
 
-create_clock -name rx_clk -period  16.27 [get_ports rx_clk_in];
+#create_clock -name rx_clk -period  16.27 [get_ports rx_clk_in];
+create_clock -name rx_clk       -period  8 [get_ports rx_clk_in]
 
 create_clock -name clk_fpga_0 -period 10 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[0]"];
 create_clock -name clk_fpga_1 -period  5 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[1]"];

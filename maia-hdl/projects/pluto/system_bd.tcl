@@ -570,8 +570,13 @@ ad_ip_parameter util_ad9361_divclk_sel CONFIG.C_SIZE 2
 ad_connect util_ad9361_divclk_sel_concat/dout util_ad9361_divclk_sel/Op1
 
 ad_ip_instance util_clkdiv util_ad9361_divclk
+if {[info exists LVDS_ENABLE]} {
 ad_ip_parameter util_ad9361_divclk CONFIG.SEL_0_DIV 4
 ad_ip_parameter util_ad9361_divclk CONFIG.SEL_1_DIV 2
+} else {
+ad_ip_parameter util_ad9361_divclk CONFIG.SEL_0_DIV 2
+ad_ip_parameter util_ad9361_divclk CONFIG.SEL_1_DIV 1
+}
 
 ad_connect util_ad9361_divclk_sel/Res util_ad9361_divclk/clk_sel
 ad_connect axi_ad9361/l_clk util_ad9361_divclk/clk
@@ -1100,7 +1105,7 @@ if {[info exists maia_iio]} {
 		#							"$ad_hdl_dir/library/util_fir_int/coefile_int.coe"
 
 		ad_add_interpolation_filter "tx_fir_interpolator" 32 2 1 {61.44} {1.92} \
-                             "$ad_hdl_dir/../projects/pluto/filter32.coe"
+                             "$ad_hdl_dir/../projects/pluto/firinterp32.coe"
 
 		ad_ip_instance xlslice interp_slice
 		

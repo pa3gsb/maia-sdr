@@ -58,8 +58,8 @@ set_property  -dict {PACKAGE_PIN  F12  IOSTANDARD LVCMOS18} [get_ports spi_miso]
 
 set_property  -dict {PACKAGE_PIN  P8   IOSTANDARD LVCMOS18} [get_ports clk_out]
 
-create_clock -name rx_clk -period  16.27 [get_ports rx_clk_in]
-
+#create_clock -name rx_clk -period  16.27 [get_ports rx_clk_in]
+create_clock -name rx_clk -period  8 [get_ports rx_clk_in]
 # probably gone in 2016.4
 
 create_clock -name clk_fpga_0 -period 10 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[0]"]
@@ -201,3 +201,6 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/manual_decim/U0/gpio_core_1/Not_Dual.gpio_Data_Out_reg[0]/C}]
 
+# clocks
+
+# create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
