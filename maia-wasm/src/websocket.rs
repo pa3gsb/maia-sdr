@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
-use web_sys::{CloseEvent, MessageEvent, WebSocket, Window};
+use web_sys::{BroadcastChannel,CloseEvent, MessageEvent, WebSocket, Window};
 
 use crate::waterfall::Waterfall;
 
@@ -44,9 +44,10 @@ impl WebSocketClient {
         };
         let hostname = location.hostname()?;
         let port = location.port()?;
+        let channel = BroadcastChannel::new("waterfall-channel")?;
         let data = Rc::new(WebSocketData {
             url: format!("{protocol}://{hostname}:{port}/waterfall"),
-            onmessage: onmessage(waterfall).into_js_value(),
+            onmessage: onmessage(waterfall,channel).into_js_value(),
             onclose: RefCell::new(None),
         });
         data.setup_onclose();
@@ -56,7 +57,7 @@ impl WebSocketClient {
     }
 }
 
-fn onmessage(waterfall: Rc<RefCell<Waterfall>>) -> Closure<dyn Fn(MessageEvent)> {
+fn onmessage(waterfall: Rc<RefCell<Waterfall>>,channel: BroadcastChannel,) -> Closure<dyn Fn(MessageEvent)> {
     Closure::new(move |event: MessageEvent| {
         let data = match event.data().dyn_into::<js_sys::ArrayBuffer>() {
             Ok(x) => x,
@@ -68,6 +69,10 @@ fn onmessage(waterfall: Rc<RefCell<Waterfall>>) -> Closure<dyn Fn(MessageEvent)>
         waterfall
             .borrow_mut()
             .put_waterfall_spectrum(&js_sys::Float32Array::new(&data));
+            let js_value = js_sys::Uint8Array::new(&data).into();
+            if let Err(err) = channel.post_message(&js_value) {
+                web_sys::console::error_1(&err);
+            }
     })
 }
 

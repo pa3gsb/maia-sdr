@@ -28,6 +28,7 @@ wasm-bindgen-futures = "0.4"
 version = "0.3.72"
 features = [
   'BinaryType',
+  'BroadcastChannel',
   'CanvasRenderingContext2d',
   'CloseEvent',
   'console',
