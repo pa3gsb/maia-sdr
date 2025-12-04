@@ -1,6 +1,6 @@
 # constraints
 # ad9361 (SWAP == 0x1)
-
+#BANK34
 set_property  -dict {PACKAGE_PIN  U18  IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_clk_in_p]        
 set_property  -dict {PACKAGE_PIN  U19  IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_clk_in_n]        
 set_property  -dict {PACKAGE_PIN  Y16  IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_frame_in_p]      
@@ -54,17 +54,25 @@ set_property  -dict {PACKAGE_PIN  R19  IOSTANDARD LVCMOS25} [get_ports gpio_rese
 set_property  -dict {PACKAGE_PIN  T15  IOSTANDARD LVCMOS25} [get_ports enable]
 set_property  -dict {PACKAGE_PIN  P18  IOSTANDARD LVCMOS25} [get_ports txnrx]
 
-set_property  -dict {PACKAGE_PIN  M14  IOSTANDARD LVCMOS25 PULLTYPE PULLUP} [get_ports iic_scl]
-set_property  -dict {PACKAGE_PIN  M15  IOSTANDARD LVCMOS25 PULLTYPE PULLUP} [get_ports iic_sda]
-
 set_property  -dict {PACKAGE_PIN  R17  IOSTANDARD LVCMOS25  PULLTYPE PULLUP} [get_ports spi_csn]
 set_property  -dict {PACKAGE_PIN  V18  IOSTANDARD LVCMOS25} [get_ports spi_clk]
 set_property  -dict {PACKAGE_PIN  P16  IOSTANDARD LVCMOS25} [get_ports spi_mosi]
 set_property  -dict {PACKAGE_PIN  V17  IOSTANDARD LVCMOS25} [get_ports spi_miso]
 
-set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pl_spi_clk_o]
-set_property  -dict {PACKAGE_PIN  N15  IOSTANDARD LVCMOS25} [get_ports pl_spi_miso]
-set_property  -dict {PACKAGE_PIN  N16  IOSTANDARD LVCMOS25} [get_ports pl_spi_mosi]
+set_property  -dict {PACKAGE_PIN  P14  IOSTANDARD LVCMOS25} [get_ports ptt_io]
+# Even on 7010
+set_property  -dict {PACKAGE_PIN  T19  IOSTANDARD LVCMOS25} [get_ports ad936x_sync]
+
+######################## BANK35 1V8 ##########################
+
+set_property  -dict {PACKAGE_PIN  H16  IOSTANDARD LVCMOS25} [get_ports pad_12]
+set_property  -dict {PACKAGE_PIN  H17  IOSTANDARD LVCMOS25} [get_ports pad_14]
+set_property  -dict {PACKAGE_PIN  J18  IOSTANDARD LVCMOS25} [get_ports pad_8]
+set_property  -dict {PACKAGE_PIN  H18  IOSTANDARD LVCMOS25} [get_ports pad_10]
+set_property  -dict {PACKAGE_PIN  G19  IOSTANDARD LVCMOS25} [get_ports pad_4]
+set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25} [get_ports pad_6]
+set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16_tx]
+set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18_rx]
 
 
 #create_clock -period 8.000 -name rx_clk [get_ports rx_clk_in_p]
@@ -92,3 +100,5 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i
 # clocks
 
 create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
+
+

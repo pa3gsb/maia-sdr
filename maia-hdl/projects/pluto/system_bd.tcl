@@ -30,9 +30,18 @@ create_bd_port -dir O spi0_sdo_o
 create_bd_port -dir I spi0_sdi_i
 
 if {[info exists fishball]} {
-create_bd_port -dir I -from 17 -to 0 gpio_i
-create_bd_port -dir O -from 17 -to 0 gpio_o
-create_bd_port -dir O -from 17 -to 0 gpio_t
+create_bd_port -dir I -from 63 -to 0 gpio_i
+create_bd_port -dir O -from 63 -to 0 gpio_o
+create_bd_port -dir O -from 63 -to 0 gpio_t
+create_bd_port -dir O pad_4
+create_bd_port -dir O pad_6
+create_bd_port -dir O pad_8
+create_bd_port -dir O pad_10
+create_bd_port -dir O pad_12
+create_bd_port -dir O pad_14
+create_bd_port -dir O pad_16_tx
+create_bd_port -dir I pad_18_rx
+create_bd_port -dir I ad936x_sync
 } else {
 create_bd_port -dir I -from 16 -to 0 gpio_i
 create_bd_port -dir O -from 16 -to 0 gpio_o
@@ -494,6 +503,8 @@ create_bd_port -dir O enable
 create_bd_port -dir O txnrx
 create_bd_port -dir I up_enable
 create_bd_port -dir I up_txnrx
+
+
 
 # ad9361 core(s)
 

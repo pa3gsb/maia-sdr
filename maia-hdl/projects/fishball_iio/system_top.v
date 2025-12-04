@@ -89,31 +89,48 @@ module system_top (
   output          spi_mosi,
   input           spi_miso,
 
-  output          pl_spi_clk_o,
-  output          pl_spi_mosi,
-  input           pl_spi_miso
+  inout           pad_4,
+  inout           pad_6,
+  inout           pad_8,
+  inout           pad_10,
+  inout           pad_12,
+  inout           pad_14,
+  input              pad_18_rx,
+  output             pad_16_tx,
+  output        ptt_io,
+  input         ad936x_sync
+
 );
 
   // internal signals
 
-  wire    [17:0]  gpio_i;
-  wire    [17:0]  gpio_o;
-  wire    [17:0]  gpio_t;
+  wire    [63:0]  gpio_i;
+  wire    [63:0]  gpio_o;
+  wire    [63:0]  gpio_t;
 
   // instantiations
-
+  assign gpio_i[16:14] = gpio_o[16:14]; //Reserved
+  assign gpio_i[63:27] = gpio_o[63:27];
+  
   ad_iobuf #(
-    .DATA_WIDTH(14)
+    .DATA_WIDTH(21)
   ) i_iobuf (
-    .dio_t (gpio_t[13:0]),
-    .dio_i (gpio_o[13:0]),
-    .dio_o (gpio_i[13:0]),
-    .dio_p ({ gpio_resetb,        // 13:13
+    .dio_t ({gpio_t[26:20],gpio_t[13:0]}),
+    .dio_i ({gpio_o[26:20],gpio_o[13:0]}),
+    .dio_o ({gpio_i[26:20],gpio_i[13:0]}),
+    .dio_p ({ ptt_io,//26
+              pad_14,//25
+              pad_12,//24
+              pad_10,//23
+              pad_8,//22
+              pad_6,//21
+              pad_4,//20
+              gpio_resetb,        // 13:13
               gpio_en_agc,        // 12:12
               gpio_ctl,           // 11: 8
               gpio_status}));     //  7: 0
 
-  assign gpio_i[16:14] = gpio_o[16:14];
+  
 
 
 
@@ -169,6 +186,10 @@ module system_top (
     .tx_frame_out_n (tx_frame_out_n),
     .txnrx (txnrx),
     .up_enable (gpio_o[15]),
-    .up_txnrx (gpio_o[16]));
+    .up_txnrx (gpio_o[16]),
+    .pad_16_tx(pad_16_tx),
+    .pad_18_rx(pad_18_rx),
+    .ad936x_sync(ad936x_sync)
+  );
 
 endmodule
