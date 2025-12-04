@@ -117,7 +117,8 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_EN_RST1_PORT 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ 100.0
 ad_ip_parameter sys_ps7 CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ 200.0
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE 1
-ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 17
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 64
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_WIDTH 64
 
 if {[info exists fishball]} {
 ad_ip_parameter sys_ps7 CONFIG.PCW_PRESET_BANK0_VOLTAGE {LVCMOS 3.3V}
@@ -129,7 +130,8 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_ENET0_IO "MIO 16 .. 27"
 ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_ENET0_GRP_MDIO_IO "MIO 52 .. 53"
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE 1
-ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 18
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 64
+ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_WIDTH 64
 ad_ip_parameter sys_ps7 CONFIG.PCW_SD0_PERIPHERAL_ENABLE 1
 ad_ip_parameter sys_ps7 CONFIG.PCW_SDIO_PERIPHERAL_FREQMHZ 50
 }
@@ -1098,7 +1100,7 @@ if {[info exists maia_iio]} {
 	ad_connect sweeper_io/profile_o maia_sdr/fastlock_profile_in
 	ad_ip_instance util_vector_logic logic_orgpio [list \
 	  C_OPERATION {or} \
-	  C_SIZE 14 ]
+	  C_SIZE 64 ]
 	ad_connect logic_orgpio/Res gpio_o
 	ad_connect sweeper_io/gpio_o logic_orgpio/Op1
 	ad_connect sys_ps7/GPIO_O logic_orgpio/Op2

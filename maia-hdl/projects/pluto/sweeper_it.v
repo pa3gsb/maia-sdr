@@ -3,7 +3,7 @@
 module sweeper_it (
     input  clk,       // Clock signal
     input  reset,     // Reset signal
-    output reg  [13:0] gpio_o, // 14-bit counter gpio
+    output reg  [63:0] gpio_o, // 14-bit counter gpio
     output reg  [2:0] profile_o // 3-bit counter
 );
 
