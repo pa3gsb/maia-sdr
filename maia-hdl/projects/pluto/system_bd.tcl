@@ -1301,4 +1301,14 @@ ad_connect interclk_q/m_axis_tvalid mux_decim_q/valid_in_1
 	ad_connect mux_decim_q/data_out util_ad9361_adc_pack/fifo_wr_data_1
 		
 }
+### ADD UART 
+if { [info exists fishball]} {
+	ad_ip_instance axi_uartlite miniserial
+	ad_connect miniserial/tx pad_16_tx
+	ad_connect miniserial/rx pad_18_rx
+	ad_cpu_interrupt ps-15 mb-15 miniserial/interrupt
+	ad_connect sys_cpu_resetn miniserial/s_axi_aresetn
+	ad_connect sys_cpu_clk miniserial/s_axi_aclk 
+	ad_cpu_interconnect 0x42C00000 miniserial
 
+}
