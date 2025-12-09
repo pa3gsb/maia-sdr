@@ -98,7 +98,12 @@ module system_top (
   input              pad_18_rx,
   output             pad_16_tx,
   output        ptt_io,
-  input         ad936x_sync
+  input         ad936x_sync,
+  inout           pad_7,
+  inout           pad_9,
+  inout           pad_11,
+  inout           pad_13
+  
 
 );
 
@@ -110,15 +115,19 @@ module system_top (
 
   // instantiations
   assign gpio_i[16:14] = gpio_o[16:14]; //Reserved
-  assign gpio_i[63:27] = gpio_o[63:27];
+  assign gpio_i[63:31] = gpio_o[63:31];
   
   ad_iobuf #(
-    .DATA_WIDTH(21)
+    .DATA_WIDTH(25)
   ) i_iobuf (
-    .dio_t ({gpio_t[26:20],gpio_t[13:0]}),
-    .dio_i ({gpio_o[26:20],gpio_o[13:0]}),
-    .dio_o ({gpio_i[26:20],gpio_i[13:0]}),
-    .dio_p ({ ptt_io,//26
+    .dio_t ({gpio_t[30:20],gpio_t[13:0]}),
+    .dio_i ({gpio_o[30:20],gpio_o[13:0]}),
+    .dio_o ({gpio_i[30:20],gpio_i[13:0]}),
+    .dio_p ({ pad_13,//30
+              pad_11,//29
+              pad_9,//28
+              pad_7,//27
+              ptt_io,//26
               pad_14,//25
               pad_12,//24
               pad_10,//23

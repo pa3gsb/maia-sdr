@@ -74,10 +74,12 @@ set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25} [get_ports pad_6]
 set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16_tx]
 set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18_rx]
 
-
-#create_clock -period 8.000 -name rx_clk [get_ports rx_clk_in_p]
-
-# probably gone in 2016.4
+# GPIO ONLY 7020
+# BANK 13 3V3
+set_property  -dict {PACKAGE_PIN  V10  IOSTANDARD LVCMOS33} [get_ports pad_7]
+set_property  -dict {PACKAGE_PIN  U9  IOSTANDARD LVCMOS33} [get_ports pad_9]
+set_property  -dict {PACKAGE_PIN  U10  IOSTANDARD LVCMOS33} [get_ports pad_11]
+set_property  -dict {PACKAGE_PIN  T9  IOSTANDARD LVCMOS33} [get_ports pad_13]
 
 create_clock -name clk_fpga_0 -period 10 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[0]"]
 create_clock -name clk_fpga_1 -period  5 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[1]"]
