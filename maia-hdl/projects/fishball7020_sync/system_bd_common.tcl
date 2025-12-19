@@ -38,10 +38,11 @@ create_bd_port -dir O pad_6
 create_bd_port -dir O pad_8
 create_bd_port -dir O sync_out
 create_bd_port -dir I sync_in
-create_bd_port -dir O pad_14
+
 create_bd_port -dir O pad_16_tx
 create_bd_port -dir I pad_18_rx
 create_bd_port -dir I ad936x_sync
+create_bd_port -dir O sync_overflow
 } else {
 create_bd_port -dir I -from 16 -to 0 gpio_i
 create_bd_port -dir O -from 16 -to 0 gpio_o
@@ -858,8 +859,8 @@ ad_connect util_ad9361_adc_pack/fifo_wr_overflow util_ad9361_adc_fifo/dout_ovf
 ad_connect util_ad9361_adc_fifo/dout_data_0 adc_i_slice/Din
 ad_connect util_ad9361_adc_fifo/dout_data_1 adc_q_slice/Din
 
-ad_connect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
-ad_connect util_ad9361_adc_fifo/dout_enable_2 util_ad9361_adc_pack/enable_2
+#ad_connect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
+#ad_connect util_ad9361_adc_fifo/dout_enable_2 util_ad9361_adc_pack/enable_2
 
 
 
@@ -976,7 +977,7 @@ if {[info exists maia_iio]} {
 	#OUT
 	ad_connect muxcs8/valid_out util_ad9361_adc_pack/fifo_wr_en
 	ad_connect muxcs8/data_out util_ad9361_adc_pack/fifo_wr_data_0
-	ad_connect muxcs8/enable_out util_ad9361_adc_pack/enable_1
+	#ad_connect muxcs8/enable_out util_ad9361_adc_pack/enable_1
 
 	# ======================= 8BITS TX OUT  ============================
 	# I PART
@@ -1087,7 +1088,7 @@ if {[info exists maia_iio]} {
 	#OUT
 	ad_connect util_ad9361_adc_fifo/dout_data_3 util_ad9361_adc_pack/fifo_wr_data_3
 	ad_connect muxcs8_2/data_out util_ad9361_adc_pack/fifo_wr_data_2
-	ad_connect muxcs8_2/enable_out util_ad9361_adc_pack/enable_3
+	#ad_connect muxcs8_2/enable_out util_ad9361_adc_pack/enable_3
 
 	# ======================= 8BITS TX2 OUT  ============================
 	# I PART
@@ -1164,7 +1165,8 @@ if {[info exists maia_iio]} {
 	############ SYNC IN/OUT ################
 
 	if {[info exists fishball]} {
-		ad_connect util_ad9361_adc_fifo/dout_enable_0 sync_out
+		#ad_connect util_ad9361_adc_fifo/dout_enable_0 sync_out
+		
 		#create_bd_cell -type module -reference ad_bus_mux mux_syncin
 	}
 
@@ -1389,5 +1391,36 @@ if { [info exists fishball]} {
 	ad_connect sys_cpu_resetn miniserial/s_axi_aresetn
 	ad_connect sys_cpu_clk miniserial/s_axi_aclk 
 	ad_cpu_interconnect 0x42C00000 miniserial
+
+	ad_connect axi_ad9361/adc_enable_i0 sync_out
+	
+	ad_connect util_ad9361_adc_pack/fifo_wr_overflow sync_overflow
+
+	#ad_connect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
+	#ad_connect util_ad9361_adc_fifo/dout_enable_2 util_ad9361_adc_pack/enable_2
+	#ad_connect muxcs8/enable_out util_ad9361_adc_pack/enable_1
+	#ad_connect muxcs8_2/enable_out util_ad9361_adc_pack/enable_3
+
+	add_files -norecurse  ../fishball7020_sync/mux_enable.v
+	create_bd_cell -type module -reference mux_enable muxer_enable
+	ad_connect util_ad9361_adc_fifo/dout_enable_0 muxer_enable/ps_i0
+	ad_connect muxcs8/enable_out muxer_enable/ps_q0
+	ad_connect util_ad9361_adc_fifo/dout_enable_2 muxer_enable/ps_i1
+	ad_connect muxcs8_2/enable_out muxer_enable/ps_q1
+
+
+	 ad_connect util_ad9361_adc_pack/enable_0 muxer_enable/out_i0
+	 ad_connect util_ad9361_adc_pack/enable_1 muxer_enable/out_q0
+	 ad_connect util_ad9361_adc_pack/enable_2 muxer_enable/out_i1
+	 ad_connect util_ad9361_adc_pack/enable_3 muxer_enable/out_q1
+
+	ad_ip_instance xlslice sync_slice
+	ad_ip_parameter sync_slice CONFIG.DIN_FROM 1
+	ad_ip_parameter sync_slice CONFIG.DIN_TO 1
+	
+	ad_connect axi_ad9361/up_adc_gpio_out sync_slice/Din
+	ad_connect muxer_enable/sel sync_slice/Dout
+
+	ad_connect muxer_enable/sync sync_in
 
 }

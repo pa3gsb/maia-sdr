@@ -89,12 +89,12 @@ module system_top (
   output          spi_mosi,
   input           spi_miso,
 
-  inout           pad_4,
-  inout           pad_6,
-  inout           pad_8,
+  output wire     pad_4,
+  input  wire     pad_6,
+  output          pad_8,
   inout           pad_10,
-  inout           pad_12,
-  inout           pad_14,
+  output wire     pad_12,
+  output wire     pad_14,
   input              pad_18_rx,
   output             pad_16_tx,
   output        ptt_io,
@@ -117,25 +117,25 @@ module system_top (
   assign gpio_i[16:14] = gpio_o[16:14]; //Reserved
   assign gpio_i[63:31] = gpio_o[63:31];
 
-assign pad_4 = gpio_o[7];
-assign pad_6 = gpio_o[6];
-assign pad_8 = gpio_o[5];
-assign pad_10 = gpio_o[9];
+// https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9361-customization?&#clock_output_setup
+//assign pad_4 = gpio_o[7];
+assign pad_8 = gpio_o[6]; // Rx RF Lock
+//assign pad_8 = gpio_o[5];
+assign pad_10 = gpio_o[9]; // Bit 0 of sweep
 
   
   ad_iobuf #(
-    .DATA_WIDTH(21)
+    .DATA_WIDTH(17)
   ) i_iobuf (
-    .dio_t ({gpio_t[30:24],gpio_t[13:0]}),
-    .dio_i ({gpio_o[30:24],gpio_o[13:0]}),
-    .dio_o ({gpio_i[30:24],gpio_i[13:0]}),
+    .dio_t ({gpio_t[30:26],gpio_t[13:0]}),
+    .dio_i ({gpio_o[30:26],gpio_o[13:0]}),
+    .dio_o ({gpio_i[30:26],gpio_i[13:0]}),
     .dio_p ({ pad_13,//30
               pad_11,//29
               pad_9,//28
               pad_7,//27
               ptt_io,//26
-              pad_14,//25
-              pad_12,//24
+      
               gpio_resetb,        // 13:13
               gpio_en_agc,        // 12:12
               gpio_ctl,           // 11: 8
@@ -198,9 +198,12 @@ assign pad_10 = gpio_o[9];
     .txnrx (txnrx),
     .up_enable (gpio_o[15]),
     .up_txnrx (gpio_o[16]),
-    .pad_16_tx(pad_16_tx),
-    .pad_18_rx(pad_18_rx),
-    .ad936x_sync(ad936x_sync)
+    .pad_16_tx (pad_16_tx),
+    .pad_18_rx (pad_18_rx),
+    .ad936x_sync (ad936x_sync),
+    .sync_out (pad_4),
+    .sync_in (pad_6),
+    .sync_overflow (pad_14)
   );
 
 endmodule
