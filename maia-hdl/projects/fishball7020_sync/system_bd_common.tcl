@@ -1392,7 +1392,7 @@ if { [info exists fishball]} {
 	ad_connect sys_cpu_clk miniserial/s_axi_aclk 
 	ad_cpu_interconnect 0x42C00000 miniserial
 
-	ad_connect axi_ad9361/adc_enable_i0 sync_out
+	#ad_connect axi_ad9361/adc_enable_i0 sync_out
 	
 	ad_connect util_ad9361_adc_pack/fifo_wr_overflow sync_overflow
 
@@ -1403,10 +1403,10 @@ if { [info exists fishball]} {
 
 	add_files -norecurse  ../fishball7020_sync/mux_enable.v
 	create_bd_cell -type module -reference mux_enable muxer_enable
-	ad_connect util_ad9361_adc_fifo/dout_enable_0 muxer_enable/ps_i0
-	ad_connect muxcs8/enable_out muxer_enable/ps_q0
-	ad_connect util_ad9361_adc_fifo/dout_enable_2 muxer_enable/ps_i1
-	ad_connect muxcs8_2/enable_out muxer_enable/ps_q1
+	#ad_connect util_ad9361_adc_fifo/dout_enable_0 muxer_enable/ps_i0
+	#ad_connect muxcs8/enable_out muxer_enable/ps_q0
+	#ad_connect util_ad9361_adc_fifo/dout_enable_2 muxer_enable/ps_i1
+	#ad_connect muxcs8_2/enable_out muxer_enable/ps_q1
 
 
 	 ad_connect util_ad9361_adc_pack/enable_0 muxer_enable/out_i0
@@ -1414,13 +1414,28 @@ if { [info exists fishball]} {
 	 ad_connect util_ad9361_adc_pack/enable_2 muxer_enable/out_i1
 	 ad_connect util_ad9361_adc_pack/enable_3 muxer_enable/out_q1
 
-	ad_ip_instance xlslice sync_slice
-	ad_ip_parameter sync_slice CONFIG.DIN_FROM 1
-	ad_ip_parameter sync_slice CONFIG.DIN_TO 1
+	 
+
+	ad_ip_instance xlslice sync_slice_in
+	ad_ip_parameter sync_slice_in CONFIG.DIN_FROM 1
+	ad_ip_parameter sync_slice_in CONFIG.DIN_TO 1
 	
-	ad_connect axi_ad9361/up_adc_gpio_out sync_slice/Din
-	ad_connect muxer_enable/sel sync_slice/Dout
+	ad_connect axi_ad9361/up_adc_gpio_out sync_slice_in/Din
+	ad_connect muxer_enable/sel sync_slice_in/Dout
 
 	ad_connect muxer_enable/sync sync_in
+
+
+	ad_ip_instance xlslice sync_slice_out
+	ad_ip_parameter sync_slice_out CONFIG.DIN_FROM 2
+	ad_ip_parameter sync_slice_out CONFIG.DIN_TO 2
+
+	ad_connect axi_ad9361/up_adc_gpio_out sync_slice_out/Din
+	ad_connect sync_slice_out/Dout sync_out
+
+	ad_connect sync_slice_out/Dout muxer_enable/ps_i0
+	ad_connect sync_slice_out/Dout muxer_enable/ps_q0
+	ad_connect sync_slice_out/Dout muxer_enable/ps_i1
+	ad_connect sync_slice_out/Dout muxer_enable/ps_q1
 
 }
