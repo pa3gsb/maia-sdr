@@ -1,0 +1,3 @@
+# JUST THE PLUTO BARE MINIMAL to start wuth Custom
+# NO DECIM/INTERPOLATOR
+
