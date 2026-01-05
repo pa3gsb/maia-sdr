@@ -7,5 +7,6 @@ source ../../adi-hdl/projects/common/xilinx/adi_fir_filter_bd.tcl
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 ddr
 create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 fixed_io
 
+add_files -norecurse  ../../adi-hdl/library/common/ad_bus_mux.v
 
 #ps_7.tcl should be called after that

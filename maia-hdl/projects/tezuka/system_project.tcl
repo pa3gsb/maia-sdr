@@ -8,12 +8,10 @@ if { [info exists ::env(PROJECT_NAME)] } {
 } else {
   set project_name "e310"
 }
+
 if [regexp "e310" $project_name] {
      set p_device "xc7z020clg400-2"
-     
    }
-#fixme : should be working with if above
-set p_device "xc7z020clg400-2"
 adi_project $project_name
 
 adi_project_files $project_name [list \

@@ -1,3 +1,11 @@
+#disconnect existing
+ad_disconnect util_ad9361_adc_fifo/dout_data_0 util_ad9361_adc_pack/fifo_wr_data_0
+ad_disconnect util_ad9361_adc_fifo/dout_data_1 util_ad9361_adc_pack/fifo_wr_data_1
+ad_disconnect util_ad9361_adc_pack/fifo_wr_en util_ad9361_adc_fifo/dout_valid_0
+ad_disconnect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
+ad_disconnect util_ad9361_adc_fifo/dout_enable_1 util_ad9361_adc_pack/enable_1
+
+
 #In order to be controled by iio		
 ad_ip_instance xlslice decim_slice
 ad_connect axi_ad9361/up_adc_gpio_out decim_slice/Din
@@ -14,7 +22,6 @@ ad_ip_parameter interclk_i CONFIG.HAS_TLAST 0
 ad_ip_parameter interclk_i CONFIG.TDATA_NUM_BYTES 2
 ad_ip_parameter interclk_i CONFIG.SYNCHRONIZATION_STAGES 4 
 
-#ad_connect interclk_i/m_axis_aclk  axi_ad9361/l_clk 
 ad_connect interclk_i/m_axis_aclk  util_ad9361_divclk/clk_out
 ad_connect sys_cpu_resetn interclk_i/s_axis_aresetn 
 ad_connect  maia_sdr/decim_re_out interclk_i/s_axis_tdata
@@ -28,7 +35,6 @@ ad_connect mux_decim_i/select_path decim_slice/Dout
 ad_connect util_ad9361_adc_fifo/dout_valid_0 mux_decim_i/valid_in_0
 ad_connect util_ad9361_adc_fifo/dout_enable_0 mux_decim_i/enable_in_0
 ad_connect util_ad9361_adc_fifo/dout_data_0 mux_decim_i/data_in_0
-#ad_connect maia_sdr/decim_strobe_out mux_decim_i/valid_in_1
 ad_connect util_ad9361_adc_fifo/dout_enable_0 mux_decim_i/enable_in_1
 #ad_connect maia_sdr/decim_re_out mux_decim_i/data_in_1
 
@@ -44,7 +50,6 @@ ad_ip_parameter interclk_q CONFIG.HAS_TLAST 0
 ad_ip_parameter interclk_q CONFIG.TDATA_NUM_BYTES 2
 ad_ip_parameter interclk_q CONFIG.SYNCHRONIZATION_STAGES 4 
 
-#ad_connect interclk_q/m_axis_aclk  axi_ad9361/l_clk 
 ad_connect interclk_q/m_axis_aclk  util_ad9361_divclk/clk_out
 ad_connect sys_cpu_resetn interclk_q/s_axis_aresetn 
 ad_connect  maia_sdr/decim_im_out interclk_q/s_axis_tdata
@@ -57,17 +62,17 @@ ad_connect mux_decim_q/select_path decim_slice/Dout
 ad_connect util_ad9361_adc_fifo/dout_valid_1 mux_decim_q/valid_in_0
 ad_connect util_ad9361_adc_fifo/dout_enable_1 mux_decim_q/enable_in_0
 ad_connect util_ad9361_adc_fifo/dout_data_1 mux_decim_q/data_in_0
-
-#ad_connect maia_sdr/decim_strobe_out mux_decim_q/valid_in_1
 ad_connect util_ad9361_adc_fifo/dout_enable_1 mux_decim_q/enable_in_1
-#ad_connect maia_sdr/decim_im_out mux_decim_q/data_in_1
 
-ad_connect mux_decim_i/data_out muxcs8/data_in_0
-ad_connect mux_decim_i/valid_out muxcs8/valid_in_0
-ad_connect mux_decim_i/valid_out muxcs8/valid_in_1
 
-ad_connect mux_decim_i/data_out rxcs12_cs8/sample_in1
-ad_connect mux_decim_q/data_out rxcs12_cs8/sample_in2
 
-ad_connect rxcs12_cs8/combined_out muxcs8/data_in_1
+
+ad_connect mux_decim_i/data_out util_ad9361_adc_pack/fifo_wr_data_0
 ad_connect mux_decim_q/data_out util_ad9361_adc_pack/fifo_wr_data_1
+ad_connect mux_decim_i/valid_out util_ad9361_adc_pack/fifo_wr_en
+ad_connect mux_decim_i/enable_out util_ad9361_adc_pack/enable_0
+ad_connect mux_decim_q/enable_out util_ad9361_adc_pack/enable_1
+
+#SEEMS THE DISCONNECT HAVE DELETE ALSO EXISTING
+ad_connect util_ad9361_adc_fifo/dout_data_0 adc_i_slice/Din
+ad_connect util_ad9361_adc_fifo/dout_data_1 adc_q_slice/Din
