@@ -17,4 +17,5 @@ source ../common/maia.tcl
 source ../common/maiafirtoiq.tcl
 #source ../common/minimal.tcl
 source ../boards/$project_name/vcxo_ctrl.tcl
-
+source ../common/sweeper.tcl
+source ../common/cs12_cs8.tcl
