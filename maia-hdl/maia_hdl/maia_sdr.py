@@ -23,6 +23,7 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
+from .topfft import TopFFT
 
 # IP core version
 _version = '0.6.1'
@@ -99,6 +100,7 @@ class MaiaSDR(Elaboratable):
             dma_name='m_axi_recorder', domain_in='sync',
             domain_dma='s_axi_lite')
         self.ddc = DDC('clk3x')
+        self.raw_fft = TopFFT()
         self.sdr_registers = Registers(
             'sdr', {
                 0b000: Register(
@@ -230,7 +232,9 @@ class MaiaSDR(Elaboratable):
         self.decim_im_out = Signal(signed(16))
         self.decim_strobe_out = Signal()
         
-        
+        self.fft_re_out = Signal(signed(16))
+        self.fft_im_out = Signal(signed(16))
+        self.fft_strobe_out = Signal()
         
 
     def ports(self):
@@ -254,6 +258,9 @@ class MaiaSDR(Elaboratable):
                 self.decim_re_out,
                 self.decim_im_out,
                 self.decim_strobe_out,
+                self.fft_re_out,
+                self.fft_im_out,
+                self.fft_strobe_out,
             ]
         )
 
@@ -283,6 +290,9 @@ class MaiaSDR(Elaboratable):
        
         m.submodules.recorder = self.recorder
         m.submodules.ddc = self.ddc
+
+        m.submodules.raw_fft = raw_fft = self.raw_fft
+
         m.submodules.sdr_registers = self.sdr_registers
         m.submodules.sdr_registers_cdc = sdr_registers_cdc = RegisterCDC(
             's_axi_lite', 'sync', self.sdr_registers.aw)
@@ -362,6 +372,33 @@ class MaiaSDR(Elaboratable):
               
               
 
+        ]
+        m.d.comb += [
+            raw_fft.clken.eq(spectrometer_strobe_in), # Keep FFT enabled
+            raw_fft.common_edge_2x.eq(common_edge_2x.common_edge),
+            raw_fft.common_edge_3x.eq(common_edge_3x.common_edge),
+        ]
+
+        # Logic to select source for the raw_fft (ADC or DDC)
+        with m.If(self.sdr_registers['spectrometer']['use_ddc_out']):
+            # If DDC is used (DDC output is 16-bit, TopFFT expects 12-bit)
+            # We truncate the 4 LSBs to fit the 12-bit input of TopFFT
+            m.d.comb += [
+                raw_fft.re_in.eq(self.ddc.re_out >> 4),
+                raw_fft.im_in.eq(self.ddc.im_out >> 4),
+            ]
+        with m.Else():
+            # Use raw ADC samples (already 12-bit)
+            m.d.comb += [
+                raw_fft.re_in.eq(rxiq_cdc.re_out),
+                raw_fft.im_in.eq(rxiq_cdc.im_out),
+            ]
+
+        # Connect TopFFT outputs to the top-level ports you added
+        m.d.comb += [
+            self.fft_re_out.eq(raw_fft.re_out),
+            self.fft_im_out.eq(raw_fft.im_out),
+            self.fft_strobe_out.eq(raw_fft.strobe_out),
         ]
 
         # Recorder
