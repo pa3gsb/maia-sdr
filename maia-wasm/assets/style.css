@@ -243,17 +243,6 @@ form.ui {
     padding: 10px;
 }
 
-form.ui {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    transform: translateX(0);
-    opacity: 1;
-  }
-  
-  form.ui.hidden {
-    transform: translateX(100%); /* slide out to the right */
-    opacity: 0;
-    pointer-events: none; /* prevent clicks when hidden */
-  }
   
 .ui fieldset {
     border: none;

@@ -6,10 +6,3 @@ async function run() {
 };
 
 run();
-
-const canvas = document.getElementById("canvas");
-const panel  = document.querySelector("form.ui"); // main control panel
-
-canvas.addEventListener("dblclick", () => {
-  panel.classList.toggle("hidden");
-});
