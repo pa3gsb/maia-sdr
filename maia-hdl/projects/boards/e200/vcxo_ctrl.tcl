@@ -1,0 +1,12 @@
+set axi_vcxo_ctrl [ create_bd_cell -type ip -vlnv user.org:user:axi_vcxo_ctrl:1.0 axi_vcxo_ctrl ]
+ad_connect axi_vcxo_ctrl/CLK_40M_DAC_DIN CLK_40M_DAC_DIN
+ad_connect axi_vcxo_ctrl/CLK_40M_DAC_SCLK CLK_40M_DAC_SCLK
+ad_connect axi_vcxo_ctrl/CLK_40M_DAC_nSYNC CLK_40M_DAC_nSYNC
+ad_connect axi_vcxo_ctrl/CLKIN_10MHz CLKIN_10MHz
+ad_connect axi_vcxo_ctrl/CLK_40MHz_FPGA CLK_40MHz_FPGA
+ad_connect axi_vcxo_ctrl/PPS_GPS PPS_GPS
+ad_connect axi_vcxo_ctrl/PPS_IN PPS_IN
+ad_connect axi_vcxo_ctrl/PPS_LED PPS_LED
+ad_connect axi_vcxo_ctrl/PPS_LOCKED PPS_LOCKED
+ad_connect axi_vcxo_ctrl/REF_10M_LOCKED REF_10M_LOCKED
+ad_cpu_interconnect 0x43C00000 axi_vcxo_ctrl
