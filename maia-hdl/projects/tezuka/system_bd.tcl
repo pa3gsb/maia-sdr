@@ -1,21 +1,51 @@
-if { [info exists ::env(PROJECT_NAME)] } {
-  set project_name $::env(PROJECT_NAME)
-} else {
-  set project_name "e310"
+switch -glob -- $project_name {
+    "e310" 
+    {
+        set vctcxo "vctcxo"
+    }
+    "e200" 
+    {
+        set vctcxo "vctcxo"
+    }
+    "libre" {
+        set lvds "lvds"
+        set vctcxo "vctcxo"
+    }
+    "pluto" {
+        
+       
+    }
+    "plutoplus" {
+        
+    }
+    "fishball7010" {
+        set lvds "lvds"
+    }
+    "fishball7020" {
+        set lvds "lvds"
+        set uartlite "uartlite"
+        set vctcxo "vctcxo"
+    }
+    "signalsdrpro" {
+        
+    }
+    default {
+        puts "CRITICAL WARNING: Project name '$project_name' not recognized."
+        exit 1
+    }
 }
 
-# enable E310 specific settings
-if { $project_name eq "e310" } {
-  set e310 "e310"
-}
 
-source ../common/xilinx_init.tcl
-source ../boards/$project_name/ps7.tcl
-source ../boards/$project_name/ports.tcl
-source ../common/xilinx_ad9361.tcl
-source ../common/maia.tcl
-source ../common/maiafirtoiq.tcl
-#source ../common/minimal.tcl
-source ../boards/$project_name/vcxo_ctrl.tcl
-source ../common/sweeper.tcl
-source ../common/cs12_cs8.tcl
+source $::tezuka_hdl_dir/common/xilinx_init.tcl
+source $::tezuka_hdl_dir/boards/$project_name/ps7.tcl
+source $::tezuka_hdl_dir/common/xilinx_ad9361.tcl
+source $::tezuka_hdl_dir/boards/$project_name/ports.tcl
+#source $::tezuka_hdl_dir/common/minimal.tcl
+source $::tezuka_hdl_dir/common/maia.tcl
+source $::tezuka_hdl_dir/common/maiafirtoiq.tcl
+
+if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_ctrl.tcl }
+source $::tezuka_hdl_dir/common/sweeper.tcl
+source $::tezuka_hdl_dir/common/cs12_cs8.tcl
+if {[info exists uartlite]} { source $::tezuka_hdl_dir/common/uartlite.tcl }
+source $::tezuka_hdl_dir/common/txfir.tcl

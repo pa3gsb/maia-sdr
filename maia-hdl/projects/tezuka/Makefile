@@ -4,6 +4,7 @@
 ## Auto-generated, do not modify!
 ####################################################################################
 #make PROJECT_NAME=e310
+# export PROJECT_NAME=libre && make for example
 
 PROJECT_NAME ?= e310
 
