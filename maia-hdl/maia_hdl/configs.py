@@ -19,6 +19,7 @@ def maia_iio():
     config = MaiaSDRConfig()
     config.spectrometer_address = 0x1600_0000
     config.recorder_address_range = (0x0600_0000, 0x1600_0000)
+    config.Enable_RawFFT=False
     return config
 
 def maia_iio_lite():
@@ -27,4 +28,14 @@ def maia_iio_lite():
     config.spectrometer_address = 0x1600_0000
     #size only 0x8000000
     config.recorder_address_range = (0x0600_0000, 0xe00_0000)
+    config.Enable_RawFFT=False
+    return config
+
+def maia_iio_lite_fft():
+    """Configuration for Maia SDR + IIO with reduced memory + FFT"""
+    config = MaiaSDRConfig()
+    config.spectrometer_address = 0x1600_0000
+    #size only 0x8000000
+    config.recorder_address_range = (0x0600_0000, 0xe00_0000)
+    config.Enable_RawFFT =True
     return config

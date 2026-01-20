@@ -23,6 +23,8 @@ class MaiaSDRConfig:
 
         # IQ recorder
         self.recorder_address_range = (0x0100_0000, 0x1a00_0000)
+        self.Enable_RawFFT = False
+
 
     def validate(self):
         assert self.platform >= 0 and self.platform < 256

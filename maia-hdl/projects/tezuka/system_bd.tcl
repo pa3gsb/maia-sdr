@@ -25,6 +25,7 @@ switch -glob -- $project_name {
         set lvds "lvds"
         set uartlite "uartlite"
         set vctcxo "vctcxo"
+        set fftraw "fftraw"
     }
     "signalsdrpro" {
         
@@ -42,7 +43,13 @@ source $::tezuka_hdl_dir/common/xilinx_ad9361.tcl
 source $::tezuka_hdl_dir/boards/$project_name/ports.tcl
 #source $::tezuka_hdl_dir/common/minimal.tcl
 source $::tezuka_hdl_dir/common/maia.tcl
-source $::tezuka_hdl_dir/common/maiafirtoiq.tcl
+if {[info exists fftraw]} {
+      source $::tezuka_hdl_dir/common/maiaffttoiq.tcl
+} else {
+    $::tezuka_hdl_dir/common/maiafirtoiq.tcl
+}
+
+
 
 if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_ctrl.tcl }
 source $::tezuka_hdl_dir/common/sweeper.tcl

@@ -14,7 +14,13 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
 
 # INSTANCIATE MAIA
 
-ad_ip_instance maia_sdr_maia_iio_lite maia_sdr
+if {[info exists fftraw]} {
+    ad_ip_instance maia_sdr_maia_iio_lite_fft maia_sdr
+} else {
+    ad_ip_instance maia_sdr_maia_iio_lite maia_sdr
+}
+
+
 
 # GET ONLY 12 BITS
 ad_ip_instance xlslice adc_i_slice
