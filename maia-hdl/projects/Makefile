@@ -1,10 +1,12 @@
+# The list of projects you want to build
+PROJECTS := e200 e310 fishball7010 fishball7020 libre pluto plutoplus signalsdrpro
 TOPTARGETS := all clean
 
-# SUBDIRS := $(filter-out $(wildcard _*/.), $(wildcard */.))
-SUBDIRS := e200_iio fishball_iio fishball7020_iio libre_iio pluto_iio plutoplus_iio
+# This creates targets like 'all' and 'clean'
+$(TOPTARGETS): $(PROJECTS)
 
-$(TOPTARGETS): $(SUBDIRS)
-$(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS) all
+# This rule runs for every project name in the list
+$(PROJECTS):
+	export PROJECT_NAME=$@; $(MAKE) -C tezuka
 
-.PHONY: $(TOPTARGETS) $(SUBDIRS)
+.PHONY: $(TOPTARGETS) $(PROJECTS)
