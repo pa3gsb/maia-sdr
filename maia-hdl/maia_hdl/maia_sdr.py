@@ -383,9 +383,9 @@ class MaiaSDR(Elaboratable):
         ]
         if self.config.Enable_RawFFT:
             m.d.comb += [
-                raw_fft.clken.eq(spectrometer_strobe_in), # Keep FFT enabled
+                raw_fft.strobe_in.eq(spectrometer_strobe_in), # Keep FFT enabled
                 raw_fft.common_edge_2x.eq(common_edge_2x.common_edge),
-                raw_fft.common_edge_3x.eq(common_edge_3x.common_edge),
+                
             ]
 
             # Logic to select source for the raw_fft (ADC or DDC)
@@ -399,8 +399,8 @@ class MaiaSDR(Elaboratable):
             with m.Else():
                 # Use raw ADC samples (already 12-bit)
                 m.d.comb += [
-                    raw_fft.re_in.eq(rxiq_cdc.re_out),
-                    raw_fft.im_in.eq(rxiq_cdc.im_out),
+                    raw_fft.re_in.eq(spectrometer_re_in >> 4),
+                    raw_fft.im_in.eq(spectrometer_re_in >> 4),
                 ]
 
             # Connect TopFFT outputs to the top-level ports you added
