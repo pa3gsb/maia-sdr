@@ -17,13 +17,18 @@ LIB_DEPS += xilinx/util_clkdiv
 LIB_DEPS += axi_ad9361
 LIB_DEPS += util_rfifo
 LIB_DEPS += util_wfifo
+DEST = ../../../../tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
 include ../../adi-hdl/projects/scripts/project-xilinx.mk
 
-DEST = ../../../../tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
-
+build_project: $(PROJECT_NAME).xpr
 
 ip_cores:
 	$(MAKE) -C ../../ip
+
+clean:
+	bash -c "rm -rf build $(PROJECT_NAME).*"
+	bash -c "rm -f *.log *.jou *.str *.xpr *.xsa"
+	@echo "Local project cleaned. IP cores preserved."
 
 install :
 	bash -c "cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/maia-iio/"
@@ -33,6 +38,9 @@ install :
 	bash "./all_overclock.sh"
 	bash -c "cp -f build/sdk/fsbl/Release/fsbl*.elf $(DEST)/overclock/"
 	bash -c "git describe > $(DEST)/overclock/bit.txt"
-.PHONY: ip_cores install
 
-all: ip_cores install
+all: ip_cores build_project install
+
+.PHONY: ip_cores build_project install all clean
+
+
