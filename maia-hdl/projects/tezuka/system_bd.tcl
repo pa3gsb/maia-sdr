@@ -20,7 +20,7 @@ switch -glob -- $project_name {
     }
     "fishball7010" {
         set lvds "lvds"
-    }
+            }     
     "fishball7020" {
         set lvds "lvds"
         set uartlite "uartlite"
@@ -28,6 +28,9 @@ switch -glob -- $project_name {
         set fftraw "fftraw"
     }
     "signalsdrpro" {
+        
+    }
+    "nano" {
         
     }
     default {
@@ -46,7 +49,7 @@ source $::tezuka_hdl_dir/common/maia.tcl
 if {[info exists fftraw]} {
       source $::tezuka_hdl_dir/common/maiaffttoiq.tcl
 } else {
-    $::tezuka_hdl_dir/common/maiafirtoiq.tcl
+   source $::tezuka_hdl_dir/common/maiafirtoiq.tcl
 }
 
 
@@ -55,4 +58,4 @@ if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_c
 source $::tezuka_hdl_dir/common/sweeper.tcl
 source $::tezuka_hdl_dir/common/cs12_cs8.tcl
 if {[info exists uartlite]} { source $::tezuka_hdl_dir/common/uartlite.tcl }
-source $::tezuka_hdl_dir/common/txfir.tcl
+#source $::tezuka_hdl_dir/common/txfir.tcl

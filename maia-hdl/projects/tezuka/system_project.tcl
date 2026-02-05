@@ -41,6 +41,9 @@ switch -glob -- $project_name {
     "signalsdrpro" {
         set p_device "xc7z020clg400-1"
     }
+    "nano" {
+        set p_device "xc7z020clg400-1"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1
