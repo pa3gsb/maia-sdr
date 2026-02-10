@@ -1,9 +1,8 @@
-create_bd_port -dir O pad_4
-create_bd_port -dir O pad_6
-create_bd_port -dir O phase
-create_bd_port -dir I clk_40
+
 create_bd_port -dir I pps
+create_bd_port -dir I clk_10
+create_bd_port -dir O phase
+create_bd_port -dir I serial_rx
+create_bd_port -dir O serial_tx
 create_bd_port -dir O lock
-create_bd_port -dir I pad_16_rx
-create_bd_port -dir O pad_18_tx
-create_bd_port -dir I ad936x_sync
+create_bd_port -dir O clk_100khz

@@ -25,7 +25,7 @@ switch -glob -- $project_name {
         set lvds "lvds"
         set uartlite "uartlite"
         set vctcxo "vctcxo"
-        set fftraw "fftraw"
+        
     }
     "signalsdrpro" {
         

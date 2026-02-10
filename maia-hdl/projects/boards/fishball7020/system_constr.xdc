@@ -61,7 +61,7 @@ set_property  -dict {PACKAGE_PIN  V17  IOSTANDARD LVCMOS25} [get_ports spi_miso]
 
 set_property  -dict {PACKAGE_PIN  P14  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports ptt_io]
 # Even on 7010
-set_property  -dict {PACKAGE_PIN  T19  IOSTANDARD LVCMOS25} [get_ports ad936x_sync]
+set_property  -dict {PACKAGE_PIN  T19  IOSTANDARD LVCMOS25} [get_ports pad_5]
 
 ######################## BANK35 1V8 ##########################
 
@@ -71,8 +71,8 @@ set_property  -dict {PACKAGE_PIN  J18  IOSTANDARD LVCMOS25} [get_ports pad_8]
 set_property  -dict {PACKAGE_PIN  H18  IOSTANDARD LVCMOS25} [get_ports pad_10]
 set_property  -dict {PACKAGE_PIN  G19  IOSTANDARD LVCMOS25} [get_ports pad_4]
 set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25} [get_ports pad_6]
-set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16_rx]
-set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports pad_18_tx]
+set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16]
+set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18]
 
 # GPIO ONLY 7020
 # BANK 13 3V3
@@ -115,4 +115,4 @@ create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
 #The _P side of a "Clock Capable" pair has a dedicated hardware "expressway" to the FPGA's clock network.
 #The _N side does not have this dedicated path. If you put a clock on the N-pin, Vivado will give you the error you saw earlier because it has to route the clock through the "slow" general logic fabric, which causes jitter and timing issues.
 
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets {pad_10_IBUF}]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets {pad_7_IBUF}]
