@@ -2,7 +2,6 @@ module vctcxo_pll_core (
     input  wire clk_10mhz,    // 10MHz from VCTCXO (Feedback)
     input  wire sig_100khz,   // 100kHz from GPS/External (Reference)
     input  wire reset,        // System Reset
-    input  wire enable,       // PLL Enable: 0=phase_out 50%, 1=PLL active
     output wire phase_out,    // XOR phase detector output → RC filter → Vc
     output wire lock_ind,     // Lock Indicator (low = locked)
     output wire clk_100khz    // 100kHz derived from 10MHz input
@@ -46,10 +45,7 @@ module vctcxo_pll_core (
     //   - 90° phase diff  → 50% duty  → Vc mid (~1.65V)
     //   - 180° phase diff → 100% duty → Vc high
     // PLL locks at 90° phase offset (mid-scale voltage).
-    //
-    // When enable=0, output a constant toggling signal at 100kHz
-    // (50% duty → mid-scale voltage after RC filtering)
-    assign phase_out = enable ? (ref_100khz ^ sync_reg[2]) : ref_100khz;
+    assign phase_out = ref_100khz ^ sync_reg[2];
 
     // --- 5. Lock Indicator ---
     // XOR phase detector locks at 90° → duty cycle = 50%.
