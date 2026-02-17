@@ -1,6 +1,6 @@
 ad_ip_instance axi_uartlite miniserial
-ad_connect miniserial/tx pad_18_tx
-ad_connect miniserial/rx pad_16_rx
+ad_connect miniserial/tx serial_tx
+ad_connect miniserial/rx serial_rx
 ad_cpu_interrupt ps-15 mb-15 miniserial/interrupt
 ad_connect sys_cpu_resetn miniserial/s_axi_aresetn
 ad_connect sys_cpu_clk miniserial/s_axi_aclk 
