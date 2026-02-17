@@ -1,9 +1,9 @@
 ad_disconnect util_ad9361_dac_upack/enable_0 axi_ad9361_dac_fifo/din_enable_0
 ad_disconnect util_ad9361_dac_upack/enable_1 axi_ad9361_dac_fifo/din_enable_1
-ad_disconnect axi_ad9361_dac_fifo/dout_valid_out_0 util_ad9361_dac_upack/fifo_rd_en
+ad_disconnect axi_ad9361_dac_fifo/din_valid_0 util_ad9361_dac_upack/fifo_rd_en
 ad_disconnect util_ad9361_dac_upack/fifo_rd_data_0 axi_ad9361_dac_fifo/din_data_0
 ad_disconnect util_ad9361_dac_upack/fifo_rd_data_1 axi_ad9361_dac_fifo/din_data_1
-ad_disconnect util_ad9361_dac_upack/fifo_rd_valid axi_ad9361_dac_fifo/din_valid_in_0
+#ad_disconnect util_ad9361_dac_upack/fifo_rd_valid axi_ad9361_dac_fifo/din_valid_in_0
 
 
 ad_add_interpolation_filter "tx_fir_interpolator" 32 2 1 {61.44} {1.92} \
@@ -22,12 +22,11 @@ ad_connect axi_ad9361_dac_fifo/din_valid_1 tx_fir_interpolator/dac_valid_1
 
 
 ad_connect tx_fir_interpolator/dac_enable_1 axi_ad9361_dac_fifo/din_enable_1
-#ad_connect axi_ad9361_dac_fifo/dout_valid_out_0 tx_fir_interpolator/dac_valid_0
 ad_connect util_ad9361_dac_upack/fifo_rd_data_0 tx_fir_interpolator/data_in_0
 ad_connect tx_fir_interpolator/dac_enable_0 axi_ad9361_dac_fifo/din_enable_0
-#ad_connect axi_ad9361_dac_fifo/dout_valid_out_1 tx_fir_interpolator/dac_valid_1
 ad_connect util_ad9361_dac_upack/fifo_rd_data_1 tx_fir_interpolator/data_in_1
-#ad_connect util_ad9361_dac_upack/enable_1 tx_fir_interpolator/enable_out_1
+
+
 
 
 ad_connect axi_ad9361/up_dac_gpio_out interp_slice/Din

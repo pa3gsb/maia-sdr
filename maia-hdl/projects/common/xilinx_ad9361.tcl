@@ -275,7 +275,8 @@ ad_ip_instance util_upack2 util_ad9361_dac_upack { \
 	ad_ip_instance util_vector_logic logic_or [list \
 	  C_OPERATION {or} \
 	  C_SIZE 1]
-	ad_connect axi_ad9361_dac_fifo/dout_valid_out_0 util_ad9361_dac_upack/fifo_rd_en
+	#ad_connect axi_ad9361_dac_fifo/dout_valid_out_0 util_ad9361_dac_upack/fifo_rd_en
+	ad_connect axi_ad9361_dac_fifo/din_valid_0 util_ad9361_dac_upack/fifo_rd_en
 	ad_connect util_ad9361_dac_upack/fifo_rd_underflow axi_ad9361_dac_fifo/din_unf
     
 
