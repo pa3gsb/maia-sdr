@@ -26,15 +26,15 @@ module vctcxo_pll_core (
     // Set this to 1 if Higher Voltage = Lower Frequency
     localparam VCXO_REVERSED = 1'b1; 
 
-    parameter COARSE_SHIFT   = 4'd5;  // gain=32, rapide avec RC 8ms  
+    parameter COARSE_SHIFT   = 4'd6;  // gain=32, rapide avec RC 8ms  
     parameter COARSE_TOL     = 20'd100;  // 100 ticks = 10ppm
     parameter COARSE_CONFIRM = 3'd5;     // 5 secondes
 
-    parameter FINE_SHIFT_FAST = 4'd5;  // gain=32 
-    parameter FINE_SHIFT_HOLD = 4'd2;  // gain=4, maintien 
+    parameter FINE_SHIFT_FAST = 4'd6;  // gain=32 
+    parameter FINE_SHIFT_HOLD = 4'd3;  // gain=4, maintien 
 
-    parameter LOCK_TOL       = 20'd15; // 15 ticks = 1.5ppm
-    parameter LOCK_CONFIRM   = 4'd8; 
+    parameter LOCK_TOL       = 20'd5; // 5 ticks = 0.5ppm
+    parameter LOCK_CONFIRM   = 4'd4; 
 
     parameter TEST_MODE      = 1'b0;
     parameter TEST_DUTY      = 8'd128;
