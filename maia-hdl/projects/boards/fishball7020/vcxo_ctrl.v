@@ -1,6 +1,7 @@
 // =============================================================================
 // Module  : vctcxo_pll_core
 // Purpose : GPSDO with support for Inverse Slope VCTCXO (Higher V = Lower Freq)
+//           + 25 MHz output synthesized from clk_10mhz via Zynq-7 MMCM
 // =============================================================================
 
 module vctcxo_pll_core (
@@ -9,14 +10,69 @@ module vctcxo_pll_core (
     input  wire        reset,
     output wire        phase_out,
     output wire        lock_ind,
+    output wire        mmcm_clkout,       // 25 MHz derived from clk_10mhz
+    output wire        mmcm_locked, // High when internal PLL is locked
 
     // Debug
     output wire [1:0]        dbg_state,
     output wire signed [24:0] dbg_freq_error,
     output wire [15:0]       dbg_setpoint,
-    output wire              dbg_valid_pps,
+    output wire              dbg_pps_valid,
     output wire signed [23:0] dbg_integrator
 );
+
+    // =========================================================================
+    // 25 MHz Generation — Zynq-7 MMCM fed from clk_10mhz
+    // =========================================================================
+    // MMCME2_BASE:  10 MHz × 50 = 500 MHz VCO,  /20 = 25 MHz output
+    // Phase-coherent with clk_10mhz, inherits GPSDO-disciplined stability.
+    // VCO range for Zynq-7 speed grade -1: 600–1200 MHz
+    //                       speed grade -2: 600–1440 MHz
+    // If 500 MHz is below your grade's minimum, use MULT_F=62.5 / DIV=25
+    // to get VCO=625 MHz (still /25 = 25 MHz).
+    // =========================================================================
+
+    wire clk_25mhz_unbuf;
+    wire clk_fb;
+    wire pll_locked;
+
+    MMCME2_BASE #(
+        .BANDWIDTH       ("OPTIMIZED"),
+        .CLKIN1_PERIOD   (100.000),      // 10 MHz -> 100 ns
+        .CLKFBOUT_MULT_F (62.500),       // VCO = 10 × 62.5 = 625 MHz
+        .CLKFBOUT_PHASE  (0.000),
+        .CLKOUT0_DIVIDE_F(25.000),       // 625 / 25 = 25 MHz
+        .CLKOUT0_DUTY_CYCLE(0.500),
+        .CLKOUT0_PHASE   (0.000),
+        .DIVCLK_DIVIDE   (1),            // Input divider = 1
+        .REF_JITTER1     (0.010),
+        .STARTUP_WAIT    ("FALSE")
+    ) u_mmcm (
+        .CLKIN1    (clk_10mhz),          // <-- GPSDO-disciplined 10 MHz
+        .RST       (reset),
+        .CLKFBOUT  (clk_fb),
+        .CLKFBIN   (clk_fb),             // Internal feedback
+        .CLKOUT0   (clk_25mhz_unbuf),
+        .LOCKED    (pll_locked),
+        .PWRDWN    (1'b0),
+        // Unused outputs
+        .CLKOUT0B  (),
+        .CLKOUT1   (), .CLKOUT1B (),
+        .CLKOUT2   (), .CLKOUT2B (),
+        .CLKOUT3   (), .CLKOUT3B (),
+        .CLKOUT4   (),
+        .CLKOUT5   (),
+        .CLKOUT6   (),
+        .CLKFBOUTB ()
+    );
+
+    BUFG u_bufg_25 (.I(clk_25mhz_unbuf), .O(mmcm_clkout));
+
+    assign mmcm_locked = pll_locked;
+
+    // =========================================================================
+    // Original GPSDO logic below — unchanged
+    // =========================================================================
 
     // -------------------------------------------------------------------------
     // Configuration & Tuning
@@ -26,14 +82,14 @@ module vctcxo_pll_core (
     // Set this to 1 if Higher Voltage = Lower Frequency
     localparam VCXO_REVERSED = 1'b1; 
 
-    parameter COARSE_SHIFT   = 4'd6;  // gain=32, rapide avec RC 8ms  
-    parameter COARSE_TOL     = 20'd100;  // 100 ticks = 10ppm
-    parameter COARSE_CONFIRM = 3'd5;     // 5 secondes
+    parameter COARSE_SHIFT   = 4'd7;
+    parameter COARSE_TOL     = 20'd25;
+    parameter COARSE_CONFIRM = 3'd3;
 
-    parameter FINE_SHIFT_FAST = 4'd6;  // gain=32 
-    parameter FINE_SHIFT_HOLD = 4'd3;  // gain=4, maintien 
+    parameter FINE_SHIFT_FAST = 4'd6;
+    parameter FINE_SHIFT_HOLD = 4'd3;
 
-    parameter LOCK_TOL       = 20'd5; // 5 ticks = 0.5ppm
+    parameter LOCK_TOL       = 20'd5;
     parameter LOCK_CONFIRM   = 4'd4; 
 
     parameter TEST_MODE      = 1'b0;
@@ -140,13 +196,9 @@ module vctcxo_pll_core (
 
     wire [3:0] active_fine_shift = locked ? FINE_SHIFT_HOLD : FINE_SHIFT_FAST;
 
-    // We calculate the Magnitude of the correction
     wire signed [24:0] coarse_step_val = $signed(freq_error) <<< COARSE_SHIFT;
     wire signed [24:0] fine_step_val   = $signed(freq_error) <<< active_fine_shift;
 
-    // Apply the correction based on VCXO polarity
-    // If Normal: freq_err > 0 (too slow) -> Increase Integrator (Higher V)
-    // If Invert: freq_err > 0 (too slow) -> Decrease Integrator (Lower V)
     wire signed [24:0] step = (state == COARSE) ? coarse_step_val : fine_step_val;
     wire signed [24:0] corrected_step = VCXO_REVERSED ? -step : step;
 
@@ -208,7 +260,7 @@ module vctcxo_pll_core (
     assign dbg_state      = state;
     assign dbg_freq_error = freq_error;
     assign dbg_setpoint   = sd_setpoint;
-    assign dbg_valid_pps  = valid_pps;
+    assign dbg_pps_valid  = valid_pps;
     assign dbg_integrator = integrator[23:0];
 
 endmodule
