@@ -393,22 +393,125 @@ class MaiaSDR(Elaboratable):
                 # If DDC is used (DDC output is 16-bit, TopFFT expects 12-bit)
                 # We truncate the 4 LSBs to fit the 12-bit input of TopFFT
                 m.d.comb += [
-                    raw_fft.re_in.eq(self.ddc.re_out >> 4),
-                    raw_fft.im_in.eq(self.ddc.im_out >> 4),
+                    raw_fft.re_in.eq(self.ddc.re_out),
+                    raw_fft.im_in.eq(self.ddc.im_out),
                 ]
             with m.Else():
                 # Use raw ADC samples (already 12-bit)
                 m.d.comb += [
                     raw_fft.re_in.eq(spectrometer_re_in >> 4),
-                    raw_fft.im_in.eq(spectrometer_re_in >> 4),
+                    raw_fft.im_in.eq(spectrometer_im_in >> 4),
                 ]
 
-            # Connect TopFFT outputs to the top-level ports you added
+            # Bit-reversal reorder buffer for spectrometer FFT output.
+            # The DIF FFT outputs bins in bit-reversed order; this
+            # double-buffered memory reorders them to natural order.
+            from amaranth.lib.memory import Memory
+
+            spec_fft_order = self.spectrometer.fft_order_log2
+            spec_fft_size = 2**spec_fft_order
+
+            # FFT output strobe: 1-cycle delay of spectrometer_strobe_in
+            # to align with spectrometer.re_out/im_out/out_last.
+            fft_out_strobe = Signal()
+            m.d.sync += fft_out_strobe.eq(spectrometer_strobe_in)
+
+            mem_depth = 2 * spec_fft_size
+            m.submodules.fft_buf_re = fft_buf_re = Memory(
+                shape=16, depth=mem_depth, init=[])
+            m.submodules.fft_buf_im = fft_buf_im = Memory(
+                shape=16, depth=mem_depth, init=[])
+
+            wr_fft_re = fft_buf_re.write_port()
+            wr_fft_im = fft_buf_im.write_port()
+            rd_fft_re = fft_buf_re.read_port()
+            rd_fft_im = fft_buf_im.read_port()
+
+            fft_wr_bank = Signal()
+            fft_frame_avail = Signal()
+            fft_wr_ctr = Signal(spec_fft_order)
+            fft_rd_ctr = Signal(spec_fft_order)
+            fft_reading = Signal()
+            fft_rd_valid = Signal()
+            fft_last_out = Signal()
+            fft_marker = Signal()
+
+            # Bit-reverse the read counter for natural-order output
+            fft_rd_rev = Signal(spec_fft_order)
+            for i in range(spec_fft_order):
+                m.d.comb += fft_rd_rev[i].eq(
+                    fft_rd_ctr[spec_fft_order - 1 - i])
+
+            fft_wr_addr = Cat(fft_wr_ctr, fft_wr_bank)
+            # XOR LSB of bit-reversed address to apply fftshift
+            # (swap first and second halves for DC-centered output)
+            fft_rd_addr = Cat(fft_rd_rev ^ 1, ~fft_wr_bank)
+
+            # Write spectrometer FFT output to sequential addresses
+            with m.If(fft_out_strobe):
+                m.d.sync += fft_wr_ctr.eq(fft_wr_ctr + 1)
+
             m.d.comb += [
-                self.fft_re_out.eq(raw_fft.re_out),
-                self.fft_im_out.eq(raw_fft.im_out),
-                self.fft_strobe_out.eq(raw_fft.strobe_out),
+                wr_fft_re.en.eq(fft_out_strobe),
+                wr_fft_re.addr.eq(fft_wr_addr),
+                wr_fft_re.data.eq(self.spectrometer.re_out >> 2),
+                wr_fft_im.en.eq(fft_out_strobe),
+                wr_fft_im.addr.eq(fft_wr_addr),
+                wr_fft_im.data.eq(self.spectrometer.im_out >> 2),
             ]
+
+            # read_valid tracks reading with 1-strobe delay (memory latency)
+            with m.If(fft_out_strobe):
+                m.d.sync += fft_rd_valid.eq(fft_reading)
+
+            # Read state machine (gated by fft_out_strobe)
+            with m.If(self.spectrometer.out_last & fft_out_strobe):
+                m.d.sync += [
+                    fft_wr_bank.eq(~fft_wr_bank),
+                    fft_frame_avail.eq(1),
+                    fft_reading.eq(1),
+                    fft_rd_ctr.eq(0),
+                    fft_last_out.eq(fft_reading),
+                    fft_marker.eq(1),
+                ]
+            with m.Elif(fft_out_strobe):
+                m.d.sync += fft_last_out.eq(0)
+                with m.If(fft_reading):
+                    m.d.sync += fft_rd_ctr.eq(fft_rd_ctr + 1)
+                    with m.If(fft_rd_ctr == spec_fft_size - 1):
+                        m.d.sync += fft_reading.eq(0)
+
+            # Read from bit-reversed addresses in opposite bank
+            m.d.comb += [
+                rd_fft_re.en.eq(1),
+                rd_fft_re.addr.eq(fft_rd_addr),
+                rd_fft_im.en.eq(1),
+                rd_fft_im.addr.eq(fft_rd_addr),
+            ]
+
+            # Output
+            fft_strobe = (
+                (fft_rd_valid | fft_last_out)
+                & fft_frame_avail & fft_out_strobe)
+            m.d.comb += self.fft_strobe_out.eq(fft_strobe)
+
+            # Replace bin 0 of each frame with 0xFF47 marker.
+            # Use fft_rd_valid & ~fft_last_out to target bin 0 of the
+            # NEW frame, not the last_out tail of the previous frame.
+            fft_marker_active = (
+                fft_marker & fft_rd_valid & ~fft_last_out
+                & fft_frame_avail & fft_out_strobe)
+            with m.If(fft_marker_active):
+                m.d.comb += [
+                    self.fft_re_out.eq(0x7F47),
+                    self.fft_im_out.eq(0x7F47),
+                ]
+                m.d.sync += fft_marker.eq(0)
+            with m.Else():
+                m.d.comb += [
+                    self.fft_re_out.eq(rd_fft_re.data),
+                    self.fft_im_out.eq(rd_fft_im.data),
+                ]
 
         # Recorder
         m.d.comb += [

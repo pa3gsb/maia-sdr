@@ -91,6 +91,11 @@ class Spectrometer(Elaboratable):
         self.end_fft = Signal()
         self.fastlock_profile = Signal(3)
 
+        self.re_out = Signal(signed(22))
+        self.im_out = Signal(signed(22))
+        self.out_last = Signal()
+
+
     def ports(self):
         return self.dma.axi.ports() + [
             self.strobe_in,
@@ -103,6 +108,8 @@ class Spectrometer(Elaboratable):
             self.interrupt_out,
             self.fastlock_profile,
             self.end_fft,
+            self.re_out,
+            self.im_out,
         ]
 
     def elaborate(self, platform):
@@ -163,7 +170,9 @@ class Spectrometer(Elaboratable):
    #         self.end_fft.eq(integrator.done), 
             self.end_fft.eq(integrator.nearly_end), 
             self.interrupt_out.eq(~dma.busy & dma_busy_q),
-            
+            self.re_out.eq(fft.re_out),
+            self.im_out.eq(fft.im_out),
+            self.out_last.eq(fft.out_last),
         ]
 
         

@@ -1643,46 +1643,63 @@ class FFT(Elaboratable):
 
 
 def gen_verilog():
-    order_log2 = 12
-    for radix in [2, 4, 'R22']:
-        for window in [None, 'blackmanharris']:
-            for cmult3x in [False, True]:
-                w = window if window is not None else 'nowindow'
-                truncates = {
-                    2: [0] * (order_log2 // 2) + [1] * (order_log2 // 2),
-                    4: [0] * (order_log2 // 4) + [2] * (order_log2 // 4),
-                    'R22': (
-                        [[0, 0]] * (order_log2 // 4)
-                        + [[1, 1]] * (order_log2 // 4)),
-                }[radix]
-                x3 = '_cmult3x' if cmult3x else ''
-                file_out = f'fft_radix{radix}_{w}{x3}.v'
-                m = FFT(12, order_log2, radix,
-                        width_twiddle=16,
-                        truncates=truncates,
-                        use_bram_reg=True,
-                        window=window,
-                        cmult3x=cmult3x,
-                        domain_2x='clk2x' if window is not None else None,
-                        domain_3x='clk3x' if cmult3x else None)
-                ports = [m.clken,
-                         m.re_in, m.im_in,
-                         m.re_out, m.im_out,
-                         m.out_last]
-                if window is not None:
-                    ports.append(m.common_edge_2x)
-                if cmult3x:
-                    ports.append(m.common_edge_3x)
-                with open(file_out, 'w') as f:
-                    platform = PlutoPlatform()
-                    f.write(
-                        amaranth.back.verilog.convert(
-                            m,
-                            name=f'fft_radix{radix}_{w}{x3}',
-                            ports=ports, platform=platform,
-                            emit_src=False))
-                print('wrote verilog to', file_out)
-
-
+    # Define all configurations you need
+    configs = [
+        # (order_log2, width_in, radix, window, cmult3x, name_suffix)
+        # For spectrometer.py
+        (12, 16, 'R22', 'blackmanharris', True, 'spectrometer'),
+        # For topfft.py  
+        (8, 12, 'R22', None, False, 'topfft'),
+        # Optional: other sizes if needed
+        (8, 8, 'R22', None, False, 'topfft256'),
+    ]
+    
+    for order_log2, width_in, radix, window, cmult3x, suffix in configs:
+        w = window if window is not None else 'nowindow'
+        x3 = '_cmult3x' if cmult3x else ''
+        
+        # Calculate truncates based on configuration
+        num_stages = order_log2 // 2  # For R22
+        
+        if suffix == 'spectrometer':
+            # Spectrometer uses [[0,1]] * num_stages
+            truncates = [[0, 1]] * num_stages
+        else:
+            # TopFFT uses different truncation strategy
+            truncates = (
+                [[0, 0]] * (num_stages // 2) + 
+                [[1, 1]] * (num_stages - num_stages // 2)
+            )
+        
+        file_out = f'fft{order_log2}_w{width_in}_{suffix}_{w}{x3}.v'
+        
+        m = FFT(width_in, order_log2, radix,
+                width_twiddle=16,
+                truncates=truncates,
+                use_bram_reg=True,
+                window=window,
+                cmult3x=cmult3x,
+                domain_2x='clk2x' if window is not None else None,
+                domain_3x='clk3x' if cmult3x else None)
+        
+        ports = [m.clken,
+                 m.re_in, m.im_in,
+                 m.re_out, m.im_out,
+                 m.out_last]
+        if window is not None:
+            ports.append(m.common_edge_2x)
+        if cmult3x:
+            ports.append(m.common_edge_3x)
+        
+        with open(file_out, 'w') as f:
+            platform = PlutoPlatform()
+            f.write(
+                amaranth.back.verilog.convert(
+                    m,
+                    name=f'fft{order_log2}_w{width_in}_{suffix}_{w}{x3}',
+                    ports=ports, platform=platform,
+                    emit_src=False))
+        print('wrote verilog to', file_out)
+        
 if __name__ == '__main__':
     gen_verilog()
