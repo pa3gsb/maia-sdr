@@ -58,4 +58,4 @@ if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_c
 source $::tezuka_hdl_dir/common/sweeper.tcl
 source $::tezuka_hdl_dir/common/cs12_cs8.tcl
 if {[info exists uartlite]} { source $::tezuka_hdl_dir/common/uartlite.tcl }
-#source $::tezuka_hdl_dir/common/txfir.tcl
+source $::tezuka_hdl_dir/common/txfir.tcl
