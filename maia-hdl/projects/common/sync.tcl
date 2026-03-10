@@ -1,0 +1,48 @@
+# ASSUMING CS12MUX is implemented before
+
+create_bd_port -dir O sync_out
+create_bd_port -dir I sync_in
+
+
+#ad_disconnect util_ad9361_adc_fifo/dout_enable_0 util_ad9361_adc_pack/enable_0
+#ad_disconnect util_ad9361_adc_fifo/dout_enable_1 util_ad9361_adc_pack/enable_1
+#ad_disconnect util_ad9361_adc_fifo/dout_enable_2 util_ad9361_adc_pack/enable_2
+#ad_disconnect util_ad9361_adc_fifo/dout_enable_3 util_ad9361_adc_pack/enable_3
+
+ad_disconnect cs12_8mux_chan0/Enable_O1 util_ad9361_adc_pack/enable_0
+ad_disconnect cs12_8mux_chan0/Enable_O2 util_ad9361_adc_pack/enable_1
+ad_disconnect cs12_8mux_chan1/Enable_O1 util_ad9361_adc_pack/enable_2
+ad_disconnect cs12_8mux_chan1/Enable_O2 util_ad9361_adc_pack/enable_3
+
+
+create_bd_cell -type module -reference mux_enable muxer_enable
+
+ad_connect util_ad9361_adc_pack/enable_0 muxer_enable/out_i0
+ad_connect util_ad9361_adc_pack/enable_1 muxer_enable/out_q0
+ad_connect util_ad9361_adc_pack/enable_2 muxer_enable/out_i1
+ad_connect util_ad9361_adc_pack/enable_3 muxer_enable/out_q1
+
+    
+
+ad_ip_instance xlslice sync_slice_in
+ad_ip_parameter sync_slice_in CONFIG.DIN_FROM 1
+ad_ip_parameter sync_slice_in CONFIG.DIN_TO 1
+
+ad_connect axi_ad9361/up_adc_gpio_out sync_slice_in/Din
+ad_connect muxer_enable/is_slave sync_slice_in/Dout
+
+ad_connect muxer_enable/sync_slave sync_in
+
+ad_ip_instance xlslice sync_slice_out
+ad_ip_parameter sync_slice_out CONFIG.DIN_FROM 2
+ad_ip_parameter sync_slice_out CONFIG.DIN_TO 2
+
+ad_connect axi_ad9361/up_adc_gpio_out sync_slice_out/Din
+ad_connect sync_slice_out/Dout sync_out
+ad_connect sync_slice_out/Dout muxer_enable/sync_master
+
+
+ad_connect cs12_8mux_chan0/Enable_O1 muxer_enable/ps_i0
+ad_connect cs12_8mux_chan0/Enable_O2 muxer_enable/ps_q0
+ad_connect cs12_8mux_chan1/Enable_O1 muxer_enable/ps_i1
+ad_connect cs12_8mux_chan1/Enable_O2 muxer_enable/ps_q1
