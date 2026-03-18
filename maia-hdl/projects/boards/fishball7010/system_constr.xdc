@@ -59,9 +59,9 @@ set_property  -dict {PACKAGE_PIN  V18  IOSTANDARD LVCMOS25} [get_ports spi_clk]
 set_property  -dict {PACKAGE_PIN  P16  IOSTANDARD LVCMOS25} [get_ports spi_mosi]
 set_property  -dict {PACKAGE_PIN  V17  IOSTANDARD LVCMOS25} [get_ports spi_miso]
 
-set_property  -dict {PACKAGE_PIN  P14  IOSTANDARD LVCMOS25} [get_ports ptt_io]
+set_property  -dict {PACKAGE_PIN  P14  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports ptt_io]
 # Even on 7010
-set_property  -dict {PACKAGE_PIN  T19  IOSTANDARD LVCMOS25} [get_ports ad936x_sync]
+set_property  -dict {PACKAGE_PIN  T19  IOSTANDARD LVCMOS25} [get_ports pad_5]
 
 ######################## BANK35 1V8 ##########################
 
@@ -70,16 +70,10 @@ set_property  -dict {PACKAGE_PIN  H17  IOSTANDARD LVCMOS25} [get_ports pad_14]
 set_property  -dict {PACKAGE_PIN  J18  IOSTANDARD LVCMOS25} [get_ports pad_8]
 set_property  -dict {PACKAGE_PIN  H18  IOSTANDARD LVCMOS25} [get_ports pad_10]
 set_property  -dict {PACKAGE_PIN  G19  IOSTANDARD LVCMOS25} [get_ports pad_4]
-set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25} [get_ports pad_6]
+set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports pad_6]
 set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16_tx]
 set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18_rx]
 
-# GPIO ONLY 7020
-# BANK 13 3V3
-#set_property  -dict {PACKAGE_PIN  V10  IOSTANDARD LVCMOS33} [get_ports pad_7]
-#set_property  -dict {PACKAGE_PIN  U9  IOSTANDARD LVCMOS33} [get_ports pad_9]
-#set_property  -dict {PACKAGE_PIN  U10  IOSTANDARD LVCMOS33} [get_ports pad_11]
-#set_property  -dict {PACKAGE_PIN  T9  IOSTANDARD LVCMOS33} [get_ports pad_13]
 
 create_clock -name clk_fpga_0 -period 10 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[0]"]
 create_clock -name clk_fpga_1 -period  5 [get_pins "i_system_wrapper/system_i/sys_ps7/inst/PS7_i/FCLKCLK[1]"]
@@ -95,7 +89,8 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[1]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[1]/C}]
-
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[2]/C}]
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[2]/C}]
 
 set_false_path -from [get_pins {i_system_wrapper/system_i/manual_decim/U0/gpio_core_1/Not_Dual.gpio_Data_Out_reg[0]/C}]
 
@@ -104,8 +99,37 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/i_xfer_cntrl/d_data_cntrl_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/i_xfer_cntrl/d_data_cntrl_int_reg[1]/C}]
 
+# iqburst RegisterCDC: multi-bit data buses are CDC paths protected by
+# PulseSynchronizer. Data is stable for multiple cycles before/after the
+# toggle fires, so these paths are safe to relax.
+#
+# Request path: s_axi_lite_clk (clk_fpga_0) -> iq_clk (clk_div_sel_0_s)
+set_max_delay -datapath_only \
+    -from [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_request_data_src_reg[*]}] \
+    -to   [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_request_data_dest_reg[*]}] \
+    10.0
+# Response path: iq_clk (clk_div_sel_0_s) -> s_axi_lite_clk (clk_fpga_0)
+set_max_delay -datapath_only \
+    -from [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_response_data_src_reg[*]}] \
+    -to   [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_response_data_dest_reg[*]}] \
+    10.0
+# Toggle synchronizer inputs: first stage of FFSynchronizer is by definition
+# an asynchronous input — setup violations here are expected and handled by
+# ASYNC_REG placement. Exclude from timing analysis.
+set_false_path -to \
+    [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/request_sync/ff_sync/stage0_reg}]
+set_false_path -to \
+    [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/response_sync/ff_sync/stage0_reg}]
+
 # clocks
 
 create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
 
+# FIXME !
+#Important Rules to Follow
+#1. Avoid High-Speed Clocks on the N-side
+#While you can use the _N pin as an input, never use it for a high-speed clock.
+#The _P side of a "Clock Capable" pair has a dedicated hardware "expressway" to the FPGA's clock network.
+#The _N side does not have this dedicated path. If you put a clock on the N-pin, Vivado will give you the error you saw earlier because it has to route the clock through the "slow" general logic fabric, which causes jitter and timing issues.
 
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets {pad_7_IBUF}]

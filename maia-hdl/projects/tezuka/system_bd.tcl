@@ -2,14 +2,17 @@ switch -glob -- $project_name {
     "e310" 
     {
         set vctcxo "vctcxo"
+        set txfir "txfir"
     }
     "e200" 
     {
         set vctcxo "vctcxo"
+        set txfir "txfir"
     }
     "libre" {
         set lvds "lvds"
         set vctcxo "vctcxo"
+        set txfir "txfir"
     }
     "pluto" {
         
@@ -20,15 +23,22 @@ switch -glob -- $project_name {
     }
     "fishball7010" {
         set lvds "lvds"
+        set uartlite "uartlite"
+        
+        
             }     
+     
     "fishball7020" {
         set lvds "lvds"
         set uartlite "uartlite"
         set vctcxo "vctcxo"
-        
+        set txfir "txfir"
+        set sync "sync"
+        set iqburst "iqburst"
+
     }
     "signalsdrpro" {
-        
+        set txfir "txfir"
     }
     "nano" {
         
@@ -58,4 +68,6 @@ if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_c
 source $::tezuka_hdl_dir/common/sweeper.tcl
 source $::tezuka_hdl_dir/common/cs12_cs8.tcl
 if {[info exists uartlite]} { source $::tezuka_hdl_dir/common/uartlite.tcl }
-source $::tezuka_hdl_dir/common/txfir.tcl
+if {[info exists txfir]} { source $::tezuka_hdl_dir/common/txfir.tcl }
+if {[info exists sync]} { source $::tezuka_hdl_dir/common/sync.tcl }
+if {[info exists iqburst]} { source $::tezuka_hdl_dir/common/iqburst.tcl }
