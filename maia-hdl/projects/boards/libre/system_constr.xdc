@@ -88,7 +88,7 @@ set_property  -dict {PACKAGE_PIN  K14  IOSTANDARD LVCMOS33} [get_ports pl_spi_cl
 set_property  -dict {PACKAGE_PIN  J14  IOSTANDARD LVCMOS33} [get_ports pl_spi_miso]
 set_property  -dict {PACKAGE_PIN  N15  IOSTANDARD LVCMOS33} [get_ports pl_spi_mosi]
 
-#create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
+create_clock -name rx_clk       -period  4 [get_ports rx_clk_in_p]
 
 
 # probably gone in 2016.4
