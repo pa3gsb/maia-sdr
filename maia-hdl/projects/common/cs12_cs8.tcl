@@ -38,7 +38,6 @@ ad_connect cs12_8mux_chan0/rst_n util_ad9361_adc_fifo/dout_rstn
 
 ad_connect cs12_8mux_chan0/data_out0 util_ad9361_adc_pack/fifo_wr_data_0
 ad_connect cs12_8mux_chan0/data_out1 util_ad9361_adc_pack/fifo_wr_data_1
-ad_connect cs12_8mux_chan0/valid_out util_ad9361_adc_pack/fifo_wr_en
 ad_connect cs12_8mux_chan0/Enable_O1 util_ad9361_adc_pack/enable_0
 ad_connect cs12_8mux_chan0/Enable_O2 util_ad9361_adc_pack/enable_1
 
@@ -66,3 +65,10 @@ ad_connect cs12_8mux_chan1/data_out1 util_ad9361_adc_pack/fifo_wr_data_3
 ad_connect cs12_8mux_chan1/Enable_O1 util_ad9361_adc_pack/enable_2
 ad_connect cs12_8mux_chan1/Enable_O2 util_ad9361_adc_pack/enable_3
 
+# OR BEETWEEN 2 CHANNELS
+ad_ip_instance util_vector_logic channels_or [list \
+	  C_OPERATION {or} \
+	  C_SIZE 1]
+ad_connect cs12_8mux_chan0/valid_out channels_or/Op1
+ad_connect cs12_8mux_chan1/valid_out channels_or/Op2
+ad_connect channels_or/Res util_ad9361_adc_pack/fifo_wr_en
