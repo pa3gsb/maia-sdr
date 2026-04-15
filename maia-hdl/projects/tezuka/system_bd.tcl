@@ -23,7 +23,7 @@ switch -glob -- $project_name {
     }
     "fishball7010" {
         set lvds "lvds"
-        set uartlite "uartlite"
+        #set uartlite "uartlite"
         
         
             }     
@@ -31,10 +31,10 @@ switch -glob -- $project_name {
     "fishball7020" {
         set lvds "lvds"
         set uartlite "uartlite"
-        set vctcxo "vctcxo"
-        set txfir "txfir"
-        set sync "sync"
-        set iqburst "iqburst"
+        #set vctcxo "vctcxo"
+        #set txfir "txfir"
+        #set sync "sync"
+        #set iqburst "iqburst"
 
     }
     "signalsdrpro" {
@@ -42,6 +42,9 @@ switch -glob -- $project_name {
     }
     "nano" {
         
+    }
+    "plutoskyr2" {
+       set lvds "lvds" 
     }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."

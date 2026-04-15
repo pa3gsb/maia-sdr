@@ -44,6 +44,9 @@ switch -glob -- $project_name {
     "nano" {
         set p_device "xc7z010clg400-1"
     }
+    "plutoskyr2" {
+        set p_device "xc7z020clg484-2"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1
