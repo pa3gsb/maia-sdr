@@ -121,6 +121,9 @@ ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 
 # parameters to reduce size
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
+ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
+
+
 
 # FIFO LIKE FMCOMMS2
 # https://github.com/analogdevicesinc/hdl/commit/bad4eb51a9397aab2a9a01b771b3cd181422e6f6
@@ -272,9 +275,7 @@ ad_ip_instance util_upack2 util_ad9361_dac_upack { \
     ad_connect util_ad9361_divclk/clk_out axi_ad9361_dac_dma/m_axis_aclk
 	ad_connect util_ad9361_dac_upack/s_axis  axi_ad9361_dac_dma/m_axis
 
-	ad_ip_instance util_vector_logic logic_or [list \
-	  C_OPERATION {or} \
-	  C_SIZE 1]
+	
 	#ad_connect axi_ad9361_dac_fifo/dout_valid_out_0 util_ad9361_dac_upack/fifo_rd_en
 	ad_connect axi_ad9361_dac_fifo/din_valid_0 util_ad9361_dac_upack/fifo_rd_en
 	ad_connect util_ad9361_dac_upack/fifo_rd_underflow axi_ad9361_dac_fifo/din_unf
@@ -293,10 +294,15 @@ ad_ip_instance util_upack2 util_ad9361_dac_upack { \
 	ad_ip_parameter axi_ad9361_adc_dma CONFIG.DMA_2D_TRANSFER 0
 	ad_ip_parameter axi_ad9361_adc_dma CONFIG.DMA_DATA_WIDTH_SRC 64
 
-	ad_ip_instance util_cpack2 util_ad9361_adc_pack { \
-  NUM_OF_CHANNELS 4 \
-  SAMPLE_DATA_WIDTH 16 \
-}
+ad_ip_instance util_cpack2 util_ad9361_adc_pack { NUM_OF_CHANNELS 4 SAMPLE_DATA_WIDTH 16 }
+
+#ad_ip_instance cpack-ng util_ad9361_adc_pack
+
+#ad_connect  sys_cpu_clk util_ad9361_adc_pack/s_axi_lite_clk
+#ad_connect  sys_cpu_reset util_ad9361_adc_pack/s_axi_lite_rst
+
+#ad_cpu_interconnect 0x40000000 util_ad9361_adc_pack
+
 
 # Connections ot ADC_FIFO TO ADC_UPACK
 # Direct connection : should be unconnected for tezuka
