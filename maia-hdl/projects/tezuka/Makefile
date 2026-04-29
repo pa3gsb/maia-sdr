@@ -35,14 +35,13 @@ clean:
 	bash -c "rm -f *.log *.jou *.str *.xpr *.xsa"
 	@echo "Local project cleaned. IP cores preserved."
 
-install :
+install:
 	bash -c "cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/maia-iio/"
 	bash -c "rm -rf build"
 	bash -c "xsct create_fsbl_project.tcl $(PROJECT_NAME)"
 	bash -c "cp -f build/sdk/fsbl/Release/fsbl.elf $(DEST)/"
-	bash "./all_overclock.sh"
-	bash -c "cp -f build/sdk/fsbl/Release/fsbl*.elf $(DEST)/overclock/"
-#	bash -c "git describe > $(DEST)/overclock/bit.txt"
+	bash -c "./all_overclock.sh $(PROJECT_NAME)"
+	bash -c "cp -f build/sdk/fsbl/Release/fsbl_CPU*.elf $(DEST)/overclock/"
 
 all: ip_cores build_project install
 
