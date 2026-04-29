@@ -17,7 +17,8 @@ LIB_DEPS += xilinx/util_clkdiv
 LIB_DEPS += axi_ad9361
 LIB_DEPS += util_rfifo
 LIB_DEPS += util_wfifo
-DEST = ../../../../tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
+#DEST = ../../../../tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
+DEST = /media/hp-z2-dev/Variste/Doc/prog/tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
 include ../../adi-hdl/projects/scripts/project-xilinx.mk
 
 build_project: $(PROJECT_NAME).xpr
