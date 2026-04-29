@@ -194,9 +194,10 @@ ad_iobuf #(
     .clk_10(pad_7),
     .phase(pad_9),
     .serial_rx(pad_13),
-    .lock(pad_12),
-    .sync_out(pad_4),
-    .sync_in(pad_6)
+    //.sync_out(pad_4),
+    //.sync_in(pad_6),
+    .lock(pad_12)
+    
   );
 
 endmodule

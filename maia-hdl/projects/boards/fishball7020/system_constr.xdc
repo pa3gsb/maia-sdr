@@ -70,7 +70,7 @@ set_property  -dict {PACKAGE_PIN  H17  IOSTANDARD LVCMOS25} [get_ports pad_14]
 set_property  -dict {PACKAGE_PIN  J18  IOSTANDARD LVCMOS25} [get_ports pad_8]
 set_property  -dict {PACKAGE_PIN  H18  IOSTANDARD LVCMOS25} [get_ports pad_10]
 set_property  -dict {PACKAGE_PIN  G19  IOSTANDARD LVCMOS25} [get_ports pad_4]
-set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25} [get_ports pad_6]
+set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports pad_6]
 set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16]
 set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18]
 
@@ -95,7 +95,8 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[1]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[1]/C}]
-
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[2]/C}]
+set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[2]/C}]
 
 set_false_path -from [get_pins {i_system_wrapper/system_i/manual_decim/U0/gpio_core_1/Not_Dual.gpio_Data_Out_reg[0]/C}]
 
@@ -103,6 +104,28 @@ set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/i_xfer_cntrl/d_data_cntrl_int_reg[1]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/i_xfer_cntrl/d_data_cntrl_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/i_xfer_cntrl/d_data_cntrl_int_reg[1]/C}]
+
+# iqburst RegisterCDC: multi-bit data buses are CDC paths protected by
+# PulseSynchronizer. Data is stable for multiple cycles before/after the
+# toggle fires, so these paths are safe to relax.
+#
+# Request path: s_axi_lite_clk (clk_fpga_0) -> iq_clk (clk_div_sel_0_s)
+set_max_delay -datapath_only \
+    -from [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_request_data_src_reg[*]}] \
+    -to   [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_request_data_dest_reg[*]}] \
+    10.0
+# Response path: iq_clk (clk_div_sel_0_s) -> s_axi_lite_clk (clk_fpga_0)
+set_max_delay -datapath_only \
+    -from [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_response_data_src_reg[*]}] \
+    -to   [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/cdc_response_data_dest_reg[*]}] \
+    10.0
+# Toggle synchronizer inputs: first stage of FFSynchronizer is by definition
+# an asynchronous input — setup violations here are expected and handled by
+# ASYNC_REG placement. Exclude from timing analysis.
+set_false_path -to \
+    [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/request_sync/ff_sync/stage0_reg}]
+set_false_path -to \
+    [get_cells {i_system_wrapper/system_i/myiqburst/inst/reg_cdc/response_sync/ff_sync/stage0_reg}]
 
 # clocks
 
