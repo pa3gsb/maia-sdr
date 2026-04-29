@@ -1,11 +1,5 @@
 
-create_bd_port -dir I pps
-create_bd_port -dir I clk_10
-create_bd_port -dir O phase
-create_bd_port -dir I serial_rx
-create_bd_port -dir O serial_tx
-create_bd_port -dir O lock
-create_bd_port -dir O -type clk outclk
+
 
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:mdio_rtl:1.0 MDIO_PHY
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:rgmii_rtl:1.0 RGMII

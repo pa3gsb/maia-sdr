@@ -5,9 +5,9 @@
 #
 # Bank voltages (schematic sheet 3, ZYNQ_PWR_BANK):
 #   Bank 13 VCCO = VCC3V3  → LVCMOS33 (single-ended), LVDS_25 (differential, HR bank)
-#   Bank 33 VCCO = VCC1V8  → LVCMOS18
-#   Bank 34 VCCO = VCC1V8  → LVCMOS18
-#   Bank 35 VCCO = VCC1V8  → LVCMOS18
+#   Bank 33 VCCO = VCC1V8  → LVCMOS25
+#   Bank 34 VCCO = VCC1V8  → LVCMOS25
+#   Bank 35 VCCO = VCC1V8  → LVCMOS25
 #
 # PS-domain signals (MIO: QSPI, UART, SD, USB/OTG) are configured inside the
 # PS7 IP block and need no XDC entries.  Dedicated config/JTAG pins
@@ -84,10 +84,12 @@ set_property  -dict {PACKAGE_PIN  U7    IOSTANDARD LVCMOS25} [get_ports {gpio_st
 set_property  -dict {PACKAGE_PIN  AB7   IOSTANDARD LVCMOS25} [get_ports {gpio_status[4]}]
 set_property  -dict {PACKAGE_PIN  U5    IOSTANDARD LVCMOS25} [get_ports {gpio_status[5]}]
 set_property  -dict {PACKAGE_PIN  R6    IOSTANDARD LVCMOS25} [get_ports {gpio_status[6]}]
-set_property  -dict {PACKAGE_PIN  P16   IOSTANDARD LVCMOS18} [get_ports {gpio_status[7]}]
+set_property  -dict {PACKAGE_PIN  P16   IOSTANDARD LVCMOS25} [get_ports {gpio_status[7]}]
 
-# EN_AGC  (Bank 34, LVCMOS18 — net routes to Bank 34 ball T18)
-set_property  -dict {PACKAGE_PIN  T18   IOSTANDARD LVCMOS18} [get_ports gpio_en_agc]
+set_property -dict {PACKAGE_PIN R15 IOSTANDARD LVCMOS25} [get_ports gpio_sync]
+
+# EN_AGC  (Bank 34, LVCMOS25 — net routes to Bank 34 ball T18)
+set_property  -dict {PACKAGE_PIN  T18   IOSTANDARD LVCMOS25} [get_ports gpio_en_agc]
 
 # RF_RESET  (Bank 13, LVCMOS33)
 set_property  -dict {PACKAGE_PIN  U11   IOSTANDARD LVCMOS25} [get_ports gpio_resetb]
@@ -95,81 +97,83 @@ set_property  -dict {PACKAGE_PIN  U11   IOSTANDARD LVCMOS25} [get_ports gpio_res
 # ENABLE  (Bank 13, LVCMOS33)
 set_property  -dict {PACKAGE_PIN  W8    IOSTANDARD LVCMOS25} [get_ports enable]
 
-# TXNRX  (Bank 34, LVCMOS18)
-set_property  -dict {PACKAGE_PIN  R16   IOSTANDARD LVCMOS18} [get_ports txnrx]
+# TXNRX  (Bank 34, LVCMOS25)
+set_property  -dict {PACKAGE_PIN  R16   IOSTANDARD LVCMOS25} [get_ports txnrx]
 
 # SPI bus — Bank 13 (LVCMOS33)
 # V10/U9/U10/U12 carry SPI on this board; pad_7/9/11 entries removed (conflicts).
-set_property  -dict {PACKAGE_PIN  V10   IOSTANDARD LVCMOS25  PULLTYPE PULLUP} [get_ports spi_csn]
-set_property  -dict {PACKAGE_PIN  U12   IOSTANDARD LVCMOS25} [get_ports spi_clk]
-set_property  -dict {PACKAGE_PIN  U10   IOSTANDARD LVCMOS25} [get_ports spi_mosi]
-set_property  -dict {PACKAGE_PIN  U9    IOSTANDARD LVCMOS25} [get_ports spi_miso]
+set_property  -dict {PACKAGE_PIN  V10  IOSTANDARD LVCMOS25  PULLTYPE PULLUP} [get_ports spi_csn]
+set_property -dict {PACKAGE_PIN U12 IOSTANDARD LVCMOS25} [get_ports spi_clk]
+set_property -dict {PACKAGE_PIN U10 IOSTANDARD LVCMOS25} [get_ports spi_mosi]
+set_property -dict {PACKAGE_PIN U9 IOSTANDARD LVCMOS25} [get_ports spi_miso]
 
 # CLK_OUT from AD936X (V8 = IO_L2N_T0_13 — not clock-capable; use BUFG in RTL)
-set_property  -dict {PACKAGE_PIN  V8    IOSTANDARD LVCMOS25} [get_ports clk_out]
+#set_property  -dict {PACKAGE_PIN  V8    IOSTANDARD LVCMOS25} [get_ports clk_out]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RGMII — RTL8211F Ethernet PHY → Bank 35 (VCCO = VCC1V8, LVCMOS18)
+# RGMII — RTL8211F Ethernet PHY → Bank 35 (VCCO = VCC1V8, LVCMOS25)
 # Port names follow reference board convention.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # RX path (PHY → FPGA)
-set_property  -dict {PACKAGE_PIN  B19   IOSTANDARD LVCMOS18} [get_ports RGMII_rxc]
-set_property  -dict {PACKAGE_PIN  C18   IOSTANDARD LVCMOS18} [get_ports RGMII_rx_ctl]
-set_property  -dict {PACKAGE_PIN  A21   IOSTANDARD LVCMOS18} [get_ports {RGMII_rd[0]}]
-set_property  -dict {PACKAGE_PIN  A19   IOSTANDARD LVCMOS18} [get_ports {RGMII_rd[1]}]
-set_property  -dict {PACKAGE_PIN  A18   IOSTANDARD LVCMOS18} [get_ports {RGMII_rd[2]}]
-set_property  -dict {PACKAGE_PIN  A22   IOSTANDARD LVCMOS18} [get_ports {RGMII_rd[3]}]
+set_property  -dict {PACKAGE_PIN  B19   IOSTANDARD LVCMOS25} [get_ports RGMII_rxc]
+set_property  -dict {PACKAGE_PIN  C18   IOSTANDARD LVCMOS25} [get_ports RGMII_rx_ctl]
+set_property  -dict {PACKAGE_PIN  A21   IOSTANDARD LVCMOS25} [get_ports {RGMII_rd[0]}]
+set_property  -dict {PACKAGE_PIN  A19   IOSTANDARD LVCMOS25} [get_ports {RGMII_rd[1]}]
+set_property  -dict {PACKAGE_PIN  A18   IOSTANDARD LVCMOS25} [get_ports {RGMII_rd[2]}]
+set_property  -dict {PACKAGE_PIN  A22   IOSTANDARD LVCMOS25} [get_ports {RGMII_rd[3]}]
 
 # TX path (FPGA → PHY)
-set_property  -dict {PACKAGE_PIN  D18   IOSTANDARD LVCMOS18} [get_ports RGMII_txc]
-set_property  -dict {PACKAGE_PIN  C17   IOSTANDARD LVCMOS18} [get_ports RGMII_tx_ctl]
-set_property  -dict {PACKAGE_PIN  A17   IOSTANDARD LVCMOS18} [get_ports {RGMII_td[0]}]
-set_property  -dict {PACKAGE_PIN  B17   IOSTANDARD LVCMOS18} [get_ports {RGMII_td[1]}]
-set_property  -dict {PACKAGE_PIN  A16   IOSTANDARD LVCMOS18} [get_ports {RGMII_td[2]}]
-set_property  -dict {PACKAGE_PIN  B16   IOSTANDARD LVCMOS18} [get_ports {RGMII_td[3]}]
+set_property  -dict {PACKAGE_PIN  D18   IOSTANDARD LVCMOS25} [get_ports RGMII_txc]
+set_property  -dict {PACKAGE_PIN  C17   IOSTANDARD LVCMOS25} [get_ports RGMII_tx_ctl]
+set_property  -dict {PACKAGE_PIN  A17   IOSTANDARD LVCMOS25} [get_ports {RGMII_td[0]}]
+set_property  -dict {PACKAGE_PIN  B17   IOSTANDARD LVCMOS25} [get_ports {RGMII_td[1]}]
+set_property  -dict {PACKAGE_PIN  A16   IOSTANDARD LVCMOS25} [get_ports {RGMII_td[2]}]
+set_property  -dict {PACKAGE_PIN  B16   IOSTANDARD LVCMOS25} [get_ports {RGMII_td[3]}]
 
 # MDIO management interface
-set_property  -dict {PACKAGE_PIN  C15   IOSTANDARD LVCMOS18} [get_ports MDIO_PHY_mdc]
-set_property  -dict {PACKAGE_PIN  B15   IOSTANDARD LVCMOS18} [get_ports MDIO_PHY_mdio_io]
+set_property  -dict {PACKAGE_PIN  C15   IOSTANDARD LVCMOS25} [get_ports MDIO_PHY_mdc]
+set_property  -dict {PACKAGE_PIN  B15   IOSTANDARD LVCMOS25} [get_ports MDIO_PHY_mdio_io]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ADF4001 PLL — Bank 33 (VCCO = VCC1V8)
 # ═══════════════════════════════════════════════════════════════════════════════
-#set_property  -dict {PACKAGE_PIN  AB21  IOSTANDARD LVCMOS18} [get_ports pll_sclk]
-#set_property  -dict {PACKAGE_PIN  AA21  IOSTANDARD LVCMOS18} [get_ports pll_mosi]
-#set_property  -dict {PACKAGE_PIN  AB22  IOSTANDARD LVCMOS18} [get_ports pll_le]
-#set_property  -dict {PACKAGE_PIN  AA22  IOSTANDARD LVCMOS18} [get_ports pll_lock]
+set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports pll_le]
+set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports pll_clk]
+set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports pll_mosi]
+set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports i_clk]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EXT_IO connector JP5 — Banks 33/34 (VCCO = VCC1V8)
 # ═══════════════════════════════════════════════════════════════════════════════
-set_property  -dict {PACKAGE_PIN  Y18   IOSTANDARD LVCMOS18} [get_ports ext_io0]
+set_property  -dict {PACKAGE_PIN  Y18   IOSTANDARD LVCMOS25} [get_ports ext_io0]
 
-set_property  -dict {PACKAGE_PIN  K19   IOSTANDARD LVCMOS18} [get_ports {ext_io1_p}]
-set_property  -dict {PACKAGE_PIN  K20   IOSTANDARD LVCMOS18} [get_ports {ext_io1_n}]
-set_property  -dict {PACKAGE_PIN  L18   IOSTANDARD LVCMOS18} [get_ports {ext_io2_p}]
-set_property  -dict {PACKAGE_PIN  L19   IOSTANDARD LVCMOS18} [get_ports {ext_io2_n}]
-set_property  -dict {PACKAGE_PIN  M19   IOSTANDARD LVCMOS18} [get_ports {ext_io3_p}]
-set_property  -dict {PACKAGE_PIN  M20   IOSTANDARD LVCMOS18} [get_ports {ext_io3_n}]
-set_property  -dict {PACKAGE_PIN  N19   IOSTANDARD LVCMOS18} [get_ports {ext_io4_p}]
-set_property  -dict {PACKAGE_PIN  N20   IOSTANDARD LVCMOS18} [get_ports {ext_io4_n}]
-set_property  -dict {PACKAGE_PIN  M21   IOSTANDARD LVCMOS18} [get_ports {ext_io5_p}]
-set_property  -dict {PACKAGE_PIN  M22   IOSTANDARD LVCMOS18} [get_ports {ext_io5_n}]
-set_property  -dict {PACKAGE_PIN  N22   IOSTANDARD LVCMOS18} [get_ports {ext_io6_p}]
-set_property  -dict {PACKAGE_PIN  P22   IOSTANDARD LVCMOS18} [get_ports {ext_io6_n}]
-set_property  -dict {PACKAGE_PIN  R20   IOSTANDARD LVCMOS18} [get_ports {ext_io7_p}]
-set_property  -dict {PACKAGE_PIN  R21   IOSTANDARD LVCMOS18} [get_ports {ext_io7_n}]
-set_property  -dict {PACKAGE_PIN  P20   IOSTANDARD LVCMOS18} [get_ports {ext_io8_p}]
-set_property  -dict {PACKAGE_PIN  P21   IOSTANDARD LVCMOS18} [get_ports {ext_io8_n}]
-set_property  -dict {PACKAGE_PIN  N15   IOSTANDARD LVCMOS18} [get_ports {ext_io9_p}]
-set_property  -dict {PACKAGE_PIN  P15   IOSTANDARD LVCMOS18} [get_ports {ext_io9_n}]
+set_property  -dict {PACKAGE_PIN  K19   IOSTANDARD LVCMOS25} [get_ports {ext_io1_p}]
+set_property  -dict {PACKAGE_PIN  K20   IOSTANDARD LVCMOS25} [get_ports {ext_io1_n}]
+set_property  -dict {PACKAGE_PIN  L18   IOSTANDARD LVCMOS25} [get_ports {ext_io2_p}]
+set_property  -dict {PACKAGE_PIN  L19   IOSTANDARD LVCMOS25} [get_ports {ext_io2_n}]
+set_property  -dict {PACKAGE_PIN  M19   IOSTANDARD LVCMOS25} [get_ports {ext_io3_p}]
+set_property  -dict {PACKAGE_PIN  M20   IOSTANDARD LVCMOS25} [get_ports {ext_io3_n}]
+set_property  -dict {PACKAGE_PIN  N19   IOSTANDARD LVCMOS25} [get_ports {ext_io4_p}]
+set_property  -dict {PACKAGE_PIN  N20   IOSTANDARD LVCMOS25} [get_ports {ext_io4_n}]
+set_property  -dict {PACKAGE_PIN  M21   IOSTANDARD LVCMOS25} [get_ports {ext_io5_p}]
+set_property  -dict {PACKAGE_PIN  M22   IOSTANDARD LVCMOS25} [get_ports {ext_io5_n}]
+set_property  -dict {PACKAGE_PIN  N22   IOSTANDARD LVCMOS25} [get_ports {ext_io6_p}]
+set_property  -dict {PACKAGE_PIN  P22   IOSTANDARD LVCMOS25} [get_ports {ext_io6_n}]
+set_property  -dict {PACKAGE_PIN  R20   IOSTANDARD LVCMOS25} [get_ports {ext_io7_p}]
+set_property  -dict {PACKAGE_PIN  R21   IOSTANDARD LVCMOS25} [get_ports {ext_io7_n}]
+set_property  -dict {PACKAGE_PIN  P20   IOSTANDARD LVCMOS25} [get_ports {ext_io8_p}]
+set_property  -dict {PACKAGE_PIN  P21   IOSTANDARD LVCMOS25} [get_ports {ext_io8_n}]
+set_property  -dict {PACKAGE_PIN  N15   IOSTANDARD LVCMOS25} [get_ports {ext_io9_p}]
+set_property  -dict {PACKAGE_PIN  P15   IOSTANDARD LVCMOS25} [get_ports {ext_io9_n}]
 
-# CLK_SEL (Bank 33, selects VCTCXO vs external MMCX clock for ADF4001/AD936X)
-# TODO: trace CLK_SEL net ball from CLOCK schematic sheet — not resolved in page 7 text.
-# Placeholder marked with ??? — must be filled before bitstream generation.
-#set_property  -dict {PACKAGE_PIN  ???   IOSTANDARD LVCMOS18} [get_ports clk_sel]
+set_property  -dict {PACKAGE_PIN  H17  IOSTANDARD LVCMOS25 PULLTYPE PULLUP} [get_ports iic_scl]
+set_property  -dict {PACKAGE_PIN  F16  IOSTANDARD LVCMOS25 PULLTYPE PULLUP} [get_ports iic_sda]
+
+set_property  -dict {PACKAGE_PIN  E16  IOSTANDARD LVCMOS25} [get_ports pl_spi_clk_o]
+set_property  -dict {PACKAGE_PIN  D16  IOSTANDARD LVCMOS25} [get_ports pl_spi_miso]
+set_property  -dict {PACKAGE_PIN  D17  IOSTANDARD LVCMOS25} [get_ports pl_spi_mosi]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -186,8 +190,6 @@ create_clock -name rx_clk        -period  4   [get_ports rx_clk_in_p]
 # B19 = IO_L13N_T2_MRCC_35 — MRCC-capable, dedicated route valid
 create_clock -period 8.000 [get_ports RGMII_rxc]
 
-# 40 MHz reference on Y19 (IO_L11P_T1_SRCC_33) — SRCC, dedicated route valid
-create_clock -name clk_40m       -period 25   [get_ports clk_40m_fpga]
 
 set_input_jitter clk_fpga_0    0.3
 set_input_jitter clk_fpga_1    0.15

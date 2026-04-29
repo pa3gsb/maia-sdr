@@ -95,8 +95,16 @@ module system_top (
   output          spi_csn,
   output          spi_clk,
   output          spi_mosi,
-  input           spi_miso
+  input           spi_miso,
 
+  output          pl_spi_clk_o,
+  output          pl_spi_mosi,
+  input           pl_spi_miso,
+  
+  output   	  pll_le,
+  output          pll_clk,
+  output          pll_mosi,
+  input           i_clk
  
   
 
@@ -138,6 +146,7 @@ ad_iobuf #(
     .RGMII_td(RGMII_td),
     .RGMII_tx_ctl(RGMII_tx_ctl),
     .RGMII_txc(RGMII_txc),
+
     .ddr_addr (ddr_addr),
     .ddr_ba (ddr_ba),
     .ddr_cas_n (ddr_cas_n),
@@ -192,5 +201,26 @@ ad_iobuf #(
     
     
   );
+
+  reg [2:0] cnt; 
+reg adf4001_spi_clk;
+always @(posedge i_clk) begin
+    cnt <= cnt + 1'b1;          
+    if(cnt == 3'd3) adf4001_spi_clk <= 1'b1;
+    else if(cnt == 3'd7) begin 
+        adf4001_spi_clk <= 1'b0;
+        cnt <= 3'b0;
+    end
+end
+
+ADF4001_init ADF4001_INIT_U(
+//系统时钟复位
+	.clk            (adf4001_spi_clk),
+	.rst_n          (1'b1),
+
+	.SPI_LE         (pll_le   ),
+	.SPI_SCLK       (pll_clk  ),
+	.SPI_MOSI       (pll_mosi )
+);
 
 endmodule
