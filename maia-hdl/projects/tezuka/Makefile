@@ -17,6 +17,10 @@ LIB_DEPS += xilinx/util_clkdiv
 LIB_DEPS += axi_ad9361
 LIB_DEPS += util_rfifo
 LIB_DEPS += util_wfifo
+LIB_DEPS += axi_dmac
+LIB_DEPS += util_pack/util_cpack2
+LIB_DEPS += util_pack/util_upack2
+
 #DEST = ../../../../tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
 DEST = /media/hp-z2-dev/Variste/Doc/prog/tezuka_fw/board/tezuka/$(PROJECT_NAME)/bitstream
 include ../../adi-hdl/projects/scripts/project-xilinx.mk
@@ -38,7 +42,7 @@ install :
 	bash -c "cp -f build/sdk/fsbl/Release/fsbl.elf $(DEST)/"
 	bash "./all_overclock.sh"
 	bash -c "cp -f build/sdk/fsbl/Release/fsbl*.elf $(DEST)/overclock/"
-	bash -c "git describe > $(DEST)/overclock/bit.txt"
+#	bash -c "git describe > $(DEST)/overclock/bit.txt"
 
 all: ip_cores build_project install
 
