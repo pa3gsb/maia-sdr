@@ -119,9 +119,13 @@ ad_ip_parameter axi_ad9361 CONFIG.MODE_1R1T 0
 ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 }
 
-# parameters to reduce size
+if {[info exists dac_dds] } {
+ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 0
+ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 0
+} else {
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 1
+}
 
 
 

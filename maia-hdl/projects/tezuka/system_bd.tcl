@@ -3,16 +3,19 @@ switch -glob -- $project_name {
     {
         set vctcxo "vctcxo"
         set txfir "txfir"
+        set dac_dds "dac_dds"
     }
     "e200" 
     {
         set vctcxo "vctcxo"
         set txfir "txfir"
+        set dac_dds "dac_dds"
     }
     "libre" {
         set lvds "lvds"
         set vctcxo "vctcxo"
         set txfir "txfir"
+        set dac_dds "dac_dds"
     }
     "pluto" {
         
@@ -31,6 +34,7 @@ switch -glob -- $project_name {
     "fishball7020" {
         set lvds "lvds"
         set uartlite "uartlite"
+        set dac_dds "dac_dds"
         #set vctcxo "vctcxo"
         #set txfir "txfir"
         #set sync "sync"
@@ -39,12 +43,15 @@ switch -glob -- $project_name {
     }
     "signalsdrpro" {
         set txfir "txfir"
+        set dac_dds "dac_dds"
     }
     "nano" {
         
     }
     "plutoskyr2" {
-       set lvds "lvds" 
+       set lvds "lvds"
+       set txfir "txfir" 
+       set dac_dds "dac_dds"
     }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
