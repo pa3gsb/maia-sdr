@@ -1,7 +1,7 @@
 # constraints
 # ad9361 (SWAP == 0x1)
 # Corrected based on ZYNQ pin mapping table
-
+# XC7Z010CLG400
 # RX Interface (DATA_CLK_P mapped to H16 on XC7Z010CLG400)
 set_property  -dict {PACKAGE_PIN  H16  IOSTANDARD LVCMOS18} [get_ports rx_clk_in]
 set_property  -dict {PACKAGE_PIN  K19  IOSTANDARD LVCMOS18} [get_ports rx_frame_in]
@@ -80,7 +80,7 @@ set_input_jitter clk_fpga_1 0.15
 set_property IOSTANDARD LVCMOS18 [get_ports *fixed_io_mio*]
 set_property SLEW SLOW [get_ports *fixed_io_mio*]
 set_property DRIVE 8 [get_ports *fixed_io_mio*]
-set_property  -dict {PACKAGE_PIN E8   PULLTYPE PULLUP} [get_ports fixed_io_mio[ 0]]
+set_property  -dict {PACKAGE_PIN E6   PULLTYPE PULLUP} [get_ports fixed_io_mio[ 0]]
 set_property  -dict {PACKAGE_PIN A5   PULLTYPE PULLUP} [get_ports fixed_io_mio[ 1]]
 set_property  -dict {PACKAGE_PIN A8                  } [get_ports fixed_io_mio[ 2]]
 set_property  -dict {PACKAGE_PIN A7                  } [get_ports fixed_io_mio[ 3]]
