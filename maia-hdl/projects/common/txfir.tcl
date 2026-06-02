@@ -30,12 +30,8 @@ ad_connect  tx_fir_interpolator/active interp8_slice/Dout
 
 
 
-#ad_connect util_ad9361_dac_upack/fifo_rd_en tx_fir_interpolator/valid_out_0 
+ad_connect util_ad9361_dac_upack/fifo_rd_en tx_fir_interpolator/valid_out_0 
 
-#ad_ip_instance util_vector_logic logic_or [list C_OPERATION {or} C_SIZE 1]
-#ad_connect logic_or/Op1 tx_fir_interpolator/valid_out_0
-#ad_connect logic_or/Op2 axi_ad9361_dac_fifo/din_valid_0
-#ad_connect logic_or/Res util_ad9361_dac_upack/fifo_rd_en
 
 # ==============================================================================
 # CORRECTION : LATENCE INTERNE APRÈS LES PORTES ET (DANS tx_fir_interpolator)
