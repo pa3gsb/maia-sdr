@@ -120,7 +120,7 @@ ad_ip_parameter axi_ad9361 CONFIG.ADC_INIT_DELAY 21
 }
 
 if {[info exists dac_dds] } {
-ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 0
+ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
 ad_ip_parameter axi_ad9361 CONFIG.DAC_DDS_DISABLE 0
 } else {
 ad_ip_parameter axi_ad9361 CONFIG.TDD_DISABLE 1
@@ -276,11 +276,12 @@ ad_ip_instance util_upack2 util_ad9361_dac_upack { \
 	
     ad_connect util_ad9361_divclk/clk_out util_ad9361_dac_upack/clk
 	ad_connect util_ad9361_divclk_reset/peripheral_reset util_ad9361_dac_upack/reset
+	
     ad_connect util_ad9361_divclk/clk_out axi_ad9361_dac_dma/m_axis_aclk
 	ad_connect util_ad9361_dac_upack/s_axis  axi_ad9361_dac_dma/m_axis
 
 	
-	#ad_connect axi_ad9361_dac_fifo/dout_valid_out_0 util_ad9361_dac_upack/fifo_rd_en
+	
 	ad_connect axi_ad9361_dac_fifo/din_valid_0 util_ad9361_dac_upack/fifo_rd_en
 	ad_connect util_ad9361_dac_upack/fifo_rd_underflow axi_ad9361_dac_fifo/din_unf
     
