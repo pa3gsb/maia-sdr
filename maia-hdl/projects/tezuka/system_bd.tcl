@@ -1,21 +1,36 @@
+# Adresses uses
+# E200/E300 Vcxoctrl 0x43C00000 
+# DVB 0x43C03000 switchsrc
+# DVB 0x43C01000 switchdest
+# DVB 0x43C02000 switchfir
+# Uartlite 0x42C00000 miniserial
+# 0x40000000 myiqburst 
+# 0x7C460000 maia_sdr
+#LIBRE  0x41200000 axi_gpio_0
+#LIBRE  0x41210000 axi_gpio_1
+#LIBRE  0x41220000 axi_gpio_2
+
 switch -glob -- $project_name {
     "e310" 
     {
         set vctcxo "vctcxo"
         set txfir "txfir"
         set dac_dds "dac_dds"
+        set dvb "dvb"
     }
     "e200" 
     {
         set vctcxo "vctcxo"
         set txfir "txfir"
         set dac_dds "dac_dds"
+        set dvb "dvb"
     }
     "libre" {
         set lvds "lvds"
         set vctcxo "vctcxo"
         set txfir "txfir"
         set dac_dds "dac_dds"
+        set dvb "dvb"
     }
     "pluto" {
         
@@ -32,16 +47,18 @@ switch -glob -- $project_name {
             }     
      
     "fishball7020" {
-        set lvds "lvds"
+        set lvds "lvds" 
         set uartlite "uartlite"
-        set dac_dds "dac_dds"
-        #set vctcxo "vctcxo"
-        #set txfir "txfir"
+        #set dac_dds "dac_dds"
+        set dvb "dvb"
+        set vctcxo "vctcxo"
+        set txfir "txfir"
         #set sync "sync"
         #set iqburst "iqburst"
 
     }
     "signalsdrpro" {
+        set dvb "dvb"
         set txfir "txfir"
         set dac_dds "dac_dds"
     }
@@ -52,6 +69,7 @@ switch -glob -- $project_name {
        set lvds "lvds"
        set txfir "txfir" 
        set dac_dds "dac_dds"
+       set dvb "dvb"
     }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
@@ -81,3 +99,4 @@ if {[info exists uartlite]} { source $::tezuka_hdl_dir/common/uartlite.tcl }
 if {[info exists txfir]} { source $::tezuka_hdl_dir/common/txfir.tcl }
 if {[info exists sync]} { source $::tezuka_hdl_dir/common/sync.tcl }
 if {[info exists iqburst]} { source $::tezuka_hdl_dir/common/iqburst.tcl }
+if {[info exists dvb]} { source $::tezuka_hdl_dir/common/dvb.tcl }
