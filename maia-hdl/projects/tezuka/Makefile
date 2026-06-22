@@ -37,11 +37,12 @@ clean:
 
 install:
 	bash -c "cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/maia-iio/"
-	bash -c "rm -rf build"
-	bash -c "xsct create_fsbl_project.tcl $(PROJECT_NAME)"
-	bash -c "cp -f build/sdk/fsbl/Release/fsbl.elf $(DEST)/"
-	bash -c "./all_overclock.sh $(PROJECT_NAME)"
-	bash -c "cp -f build/sdk/fsbl/Release/fsbl_CPU*.elf $(DEST)/overclock/"
+# FSBL will be done with embeddedsw later by buildroot 	
+#	bash -c "rm -rf build"
+#	bash -c "xsct create_fsbl_project.tcl $(PROJECT_NAME)"
+#	bash -c "cp -f build/sdk/fsbl/Release/fsbl.elf $(DEST)/"
+#	bash -c "./all_overclock.sh $(PROJECT_NAME)"
+#	bash -c "cp -f build/sdk/fsbl/Release/fsbl_CPU*.elf $(DEST)/overclock/"
 
 all: ip_cores build_project install
 
