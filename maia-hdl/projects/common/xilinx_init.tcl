@@ -1,11 +1,15 @@
 # Setup IP Repositories
+save_bd_design
+close_bd_design system
 set_property ip_repo_paths [list \
   "$::tezuka_hdl_dir/common/antsdr-hdl" \
   "$::tezuka_hdl_dir/common/libresdr-hdl" \
   "$::tezuka_hdl_dir/../ip" \
+  "$::tezuka_hdl_dir/../dvb_fpga" \
   "$ad_hdl_dir/library" \
 ] [current_fileset]
-update_ip_catalog
+update_ip_catalog -rebuild
+open_bd_design $project_name.srcs/sources_1/bd/system/system.bd
 source $ad_hdl_dir/projects/common/xilinx/adi_fir_filter_bd.tcl
 
 # Default Global Ports
