@@ -63,6 +63,11 @@ adi_project_files $project_name [list \
 
 # use improved implementation strategy for best timing results
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+# Vivado 2025 : BUG 
+# https://adaptivesupport.amd.com/s/question/0D5Pd0000153gqkKAA/persistent-hold-timing-violations-after-upgrading-to-vivado-2025x-physoptdesign-holdfix-ineffective?language=en_US
+set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.TCL.PRE \
+  [file normalize [file join [file dirname [info script]] hold_fix.tcl]] \
+  [get_runs impl_1]
 set_property is_enabled false [get_files  *system_sys_ps7_0.xdc]
 adi_project_run $project_name
 source $ad_hdl_dir/library/axi_ad9361/axi_ad9361_delay.tcl
