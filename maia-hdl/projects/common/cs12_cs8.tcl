@@ -38,9 +38,18 @@ ad_connect cs12_8mux_chan0/clk util_ad9361_adc_fifo/dout_clk
 ad_connect cs12_8mux_chan0/rst_n util_ad9361_adc_fifo/dout_rstn
 ad_connect cs12_zero_count_slice/Dout cs12_8mux_chan0/zero_count
 
-# Outputs
-ad_connect cs12_8mux_chan0/data_out0 util_ad9361_adc_pack/fifo_wr_data_0
-ad_connect cs12_8mux_chan0/data_out1 util_ad9361_adc_pack/fifo_wr_data_1
+# Outputs (data routed through cs12_sync_frame: inserts a CS12 sync burst every period)
+create_bd_cell -type module -reference cs12_sync_frame cs12_sync_chan0
+ad_connect cs12_sync_chan0/clk           util_ad9361_adc_fifo/dout_clk
+ad_connect cs12_sync_chan0/rst_n         util_ad9361_adc_fifo/dout_rstn
+ad_connect util_ad9361_adc_fifo/dout_enable_0 cs12_sync_chan0/Enable0
+ad_connect util_ad9361_adc_fifo/dout_enable_1 cs12_sync_chan0/Enable1
+ad_connect cs12_8mux_chan0/frame_start   cs12_sync_chan0/frame_start
+ad_connect cs12_8mux_chan0/valid_out     cs12_sync_chan0/valid_in
+ad_connect cs12_8mux_chan0/data_out0     cs12_sync_chan0/data_in0
+ad_connect cs12_8mux_chan0/data_out1     cs12_sync_chan0/data_in1
+ad_connect cs12_sync_chan0/data_out0     util_ad9361_adc_pack/fifo_wr_data_0
+ad_connect cs12_sync_chan0/data_out1     util_ad9361_adc_pack/fifo_wr_data_1
 ad_connect cs12_8mux_chan0/Enable_O1 util_ad9361_adc_pack/enable_0
 ad_connect cs12_8mux_chan0/Enable_O2 util_ad9361_adc_pack/enable_1
 
@@ -60,9 +69,18 @@ ad_connect cs12_8mux_chan1/clk util_ad9361_adc_fifo/dout_clk
 ad_connect cs12_8mux_chan1/rst_n util_ad9361_adc_fifo/dout_rstn
 ad_connect cs12_zero_count_slice/Dout cs12_8mux_chan1/zero_count
 
-# Outputs
-ad_connect cs12_8mux_chan1/data_out0 util_ad9361_adc_pack/fifo_wr_data_2
-ad_connect cs12_8mux_chan1/data_out1 util_ad9361_adc_pack/fifo_wr_data_3
+# Outputs (data routed through cs12_sync_frame: inserts a CS12 sync burst every period)
+create_bd_cell -type module -reference cs12_sync_frame cs12_sync_chan1
+ad_connect cs12_sync_chan1/clk           util_ad9361_adc_fifo/dout_clk
+ad_connect cs12_sync_chan1/rst_n         util_ad9361_adc_fifo/dout_rstn
+ad_connect util_ad9361_adc_fifo/dout_enable_2 cs12_sync_chan1/Enable0
+ad_connect util_ad9361_adc_fifo/dout_enable_3 cs12_sync_chan1/Enable1
+ad_connect cs12_8mux_chan1/frame_start   cs12_sync_chan1/frame_start
+ad_connect cs12_8mux_chan1/valid_out     cs12_sync_chan1/valid_in
+ad_connect cs12_8mux_chan1/data_out0     cs12_sync_chan1/data_in0
+ad_connect cs12_8mux_chan1/data_out1     cs12_sync_chan1/data_in1
+ad_connect cs12_sync_chan1/data_out0     util_ad9361_adc_pack/fifo_wr_data_2
+ad_connect cs12_sync_chan1/data_out1     util_ad9361_adc_pack/fifo_wr_data_3
 ad_connect cs12_8mux_chan1/Enable_O1 util_ad9361_adc_pack/enable_2
 ad_connect cs12_8mux_chan1/Enable_O2 util_ad9361_adc_pack/enable_3
 
