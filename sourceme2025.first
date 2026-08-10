@@ -1,0 +1,3 @@
+source /media/hp-z2-dev/Variste/Doc/opt/2025.2/Vivado/settings64.sh
+PATH=$PATH:/home/hp-z2-dev/prog/oss-cad-suite/bin
+export ADI_IGNORE_VERSION_CHECK=1
