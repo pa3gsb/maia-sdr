@@ -20,6 +20,7 @@ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fix
 add_files -norecurse  $ad_hdl_dir/library/common/ad_bus_mux.v
 add_files -norecurse  $::tezuka_hdl_dir/common/sweeper_it.v
 add_files -norecurse  $::tezuka_hdl_dir/common/cs12_cs8mux.v
+add_files -norecurse  $::tezuka_hdl_dir/common/cs12_sync_frame.v
 add_files -norecurse  $::tezuka_hdl_dir/boards/fishball7020/vcxo_ctrl.v
 add_files -norecurse  $::tezuka_hdl_dir/common/mux_enable.v
 add_files -norecurse  $::tezuka_hdl_dir/boards/plutoskyr2/ADF4001_init.v
