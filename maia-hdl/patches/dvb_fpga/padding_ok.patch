@@ -1,0 +1,650 @@
+diff --git a/rtl/axi_bbframe_length_enforcer.vhd b/rtl/axi_bbframe_length_enforcer.vhd
+index 76ce604..4dcc560 100644
+--- a/rtl/axi_bbframe_length_enforcer.vhd
++++ b/rtl/axi_bbframe_length_enforcer.vhd
+@@ -18,6 +18,27 @@
+ -- source, You must maintain the Source Location visible on the external case of
+ -- the DVB Encoder or other products you make using this source.
+ 
++---------------------------------
++-- Block name and description --
++---------------------------------
++-- Baseband-frame length enforcer, self-synchronising version.
++--
++-- The incoming AXI stream is expected to carry raw DVB-S2 transport data
++-- whose frames are delimited by a SYNC byte (0xB8) followed by a MODCOD
++-- configuration byte.  Internally the block:
++--
++--   1. Scans for SYNC (0xB8)
++--   2. Decodes the MODCOD byte -> constellation, code rate, frame type, pilots
++--   3. Looks up the matching Kbch frame length
++--   4. Emits exactly Kbch/8 data bytes with m_tlast on the last one
++--   5. Consumes any inter-frame padding, then searches for the next SYNC
++--
++-- The decoded configuration is encoded into m_tuser (tid) so that every
++-- downstream block sees the correct MODCOD sideband for the frame in flight.
++--
++-- The original axi_stream_frame_slicer in fpga_cores is left untouched;
++-- all DVB-specific logic lives here in the work library.
++
+ ---------------
+ -- Libraries --
+ ---------------
+@@ -27,7 +48,6 @@ use ieee.numeric_std.all;
+ 
+ library fpga_cores;
+ use fpga_cores.common_pkg.all;
+-use fpga_cores.axi_pkg.all;
+ 
+ use work.dvb_utils_pkg.all;
+ 
+@@ -36,23 +56,21 @@ use work.dvb_utils_pkg.all;
+ ------------------------
+ entity axi_bbframe_length_enforcer is
+   generic (
+-    TDATA_WIDTH : integer  := 8;
+-    TUSER_WIDTH : integer  := 8
++    TDATA_WIDTH : integer := 8;
++    TUSER_WIDTH : integer := 8       -- must equal ENCODED_CONFIG_WIDTH
+   );
+   port (
+     -- Usual ports
+     clk             : in  std_logic;
+     rst             : in  std_logic;
+ 
+-    -- AXI input
+-    s_frame_type    : in  frame_type_t;
+-    s_code_rate     : in  code_rate_t;
++    -- AXI input  (raw transport stream containing SYNC + MODCOD headers)
+     s_tvalid        : in  std_logic;
+     s_tdata         : in  std_logic_vector(TDATA_WIDTH - 1 downto 0);
+-    s_tuser         : in  std_logic_vector(TUSER_WIDTH - 1 downto 0);
+     s_tlast         : in  std_logic;
+     s_tready        : out std_logic;
+-    -- AXI output
++
++    -- AXI output (clean frame data, SYNC/MODCOD stripped, tid on m_tuser)
+     m_tready        : in  std_logic;
+     m_tvalid        : out std_logic;
+     m_tlast         : out std_logic;
+@@ -62,187 +80,269 @@ end axi_bbframe_length_enforcer;
+ 
+ architecture axi_bbframe_length_enforcer of axi_bbframe_length_enforcer is
+ 
+-  -- Assign a ROM addr to each config
+-  function get_rom_addr (
+-    constant frame_type : frame_type_t;
+-    constant code_rate  : code_rate_t) return integer is
++  ---------------
++  -- Constants --
++  ---------------
++  constant SYNC_BYTE          : std_logic_vector(7 downto 0) := x"B8";
++  -- 16 bits is enough for the largest Kbch in bytes (58 192 / 8 = 7 274)
++  constant FRAME_LENGTH_WIDTH : integer := 16;
++
++  -----------
++  -- Types --
++  -----------
++  type state_t is (WAIT_SYNC, READ_MODCOD, FRAME_DATA);
++
++  -- -------------------------------------------------------------------------
++  -- Combinational decode helpers
++  -- -------------------------------------------------------------------------
++  -- Config byte layout (from inline_config_adapter):
++  --   bit  6     : frame type  (1 = short, 0 = normal)
++  --   bit  5     : pilots
++  --   bits 4..0  : MODCOD index (1-28)
++  --
++  -- MODCOD-to-code-rate mapping (same code rate -> same Kbch):
++  --   MODCOD  1        -> C1/4      MODCOD  2        -> C1/3
++  --   MODCOD  3        -> C2/5      MODCOD  4        -> C1/2
++  --   MODCOD  5, 12    -> C3/5      MODCOD  6, 13, 18       -> C2/3
++  --   MODCOD  7, 14, 19, 24 -> C3/4 MODCOD  8, 20, 25       -> C4/5
++  --   MODCOD  9, 15, 21, 26 -> C5/6 MODCOD 10, 16, 22, 27   -> C8/9
++  --   MODCOD 11, 17, 23, 28 -> C9/10
++  --
++  -- Kbch values in bits (from DVB-S2 spec):
++  --
++  --  Code rate  | Short frame | Normal frame
++  --  -----------+-------------+-------------
++  --  C1/4       |     3 072   |   16 008
++  --  C1/3       |     5 232   |   21 408
++  --  C2/5       |     6 312   |   25 728
++  --  C1/2       |     7 032   |   32 208
++  --  C3/5       |     9 552   |   38 688
++  --  C2/3       |    10 632   |   43 040
++  --  C3/4       |    11 712   |   48 408
++  --  C4/5       |    12 432   |   51 648
++  --  C5/6       |    13 152   |   53 840
++  --  C8/9       |    14 232   |   57 472
++  --  C9/10      |     n/a     |   58 192
++  -- -------------------------------------------------------------------------
++
++  function decode_frame_length (
++    constant config_byte : std_logic_vector(7 downto 0))
++    return unsigned
++  is
++    variable modcod : integer range 0 to 31;
+   begin
+-    case frame_type is
+-      when FECFRAME_SHORT =>
+-        case code_rate is
+-          when C1_4 => return 0;
+-          when C1_3 => return 1;
+-          when C2_5 => return 2;
+-          when C1_2 => return 3;
+-          when C3_5 => return 4;
+-          when C2_3 => return 5;
+-          when C3_4 => return 6;
+-          when C4_5 => return 7;
+-          when C5_6 => return 8;
+-          when C8_9 => return 9;
+-          when others => null;
+-        end case;
+-
+-      when FECFRAME_NORMAL =>
+-        case code_rate is
+-          when C1_4  => return 10;
+-          when C1_3  => return 11;
+-          when C2_5  => return 12;
+-          when C1_2  => return 13;
+-          when C3_5  => return 14;
+-          when C2_3  => return 15;
+-          when C3_4  => return 16;
+-          when C4_5  => return 17;
+-          when C5_6  => return 18;
+-          when C8_9  => return 19;
+-          when C9_10 => return 20;
+-          when others => null;
+-        end case;
+-
+-        when others => null;
++    modcod := to_integer(unsigned(config_byte(4 downto 0)));
++
++    if config_byte(6) = '1' then
++      -- Short frame (C9/10 does not exist for short frames -> returns 0)
++      case modcod is
++        when  1                 => return to_unsigned( 3072 / 8, FRAME_LENGTH_WIDTH); --  384
++        when  2                 => return to_unsigned( 5232 / 8, FRAME_LENGTH_WIDTH); --  654
++        when  3                 => return to_unsigned( 6312 / 8, FRAME_LENGTH_WIDTH); --  789
++        when  4                 => return to_unsigned( 7032 / 8, FRAME_LENGTH_WIDTH); --  879
++        when  5 | 12            => return to_unsigned( 9552 / 8, FRAME_LENGTH_WIDTH); -- 1194
++        when  6 | 13 | 18       => return to_unsigned(10632 / 8, FRAME_LENGTH_WIDTH); -- 1329
++        when  7 | 14 | 19 | 24  => return to_unsigned(11712 / 8, FRAME_LENGTH_WIDTH); -- 1464
++        when  8 | 20 | 25       => return to_unsigned(12432 / 8, FRAME_LENGTH_WIDTH); -- 1554
++        when  9 | 15 | 21 | 26  => return to_unsigned(13152 / 8, FRAME_LENGTH_WIDTH); -- 1644
++        when 10 | 16 | 22 | 27  => return to_unsigned(14232 / 8, FRAME_LENGTH_WIDTH); -- 1779
++        when others              => return to_unsigned(0, FRAME_LENGTH_WIDTH);         -- invalid
+       end case;
+-      return 0;
++    else
++      -- Normal frame
++      case modcod is
++        when  1                 => return to_unsigned(16008 / 8, FRAME_LENGTH_WIDTH); -- 2001
++        when  2                 => return to_unsigned(21408 / 8, FRAME_LENGTH_WIDTH); -- 2676
++        when  3                 => return to_unsigned(25728 / 8, FRAME_LENGTH_WIDTH); -- 3216
++        when  4                 => return to_unsigned(32208 / 8, FRAME_LENGTH_WIDTH); -- 4026
++        when  5 | 12            => return to_unsigned(38688 / 8, FRAME_LENGTH_WIDTH); -- 4836
++        when  6 | 13 | 18       => return to_unsigned(43040 / 8, FRAME_LENGTH_WIDTH); -- 5380
++        when  7 | 14 | 19 | 24  => return to_unsigned(48408 / 8, FRAME_LENGTH_WIDTH); -- 6051
++        when  8 | 20 | 25       => return to_unsigned(51648 / 8, FRAME_LENGTH_WIDTH); -- 6456
++        when  9 | 15 | 21 | 26  => return to_unsigned(53840 / 8, FRAME_LENGTH_WIDTH); -- 6730
++        when 10 | 16 | 22 | 27  => return to_unsigned(57472 / 8, FRAME_LENGTH_WIDTH); -- 7184
++        when 11 | 17 | 23 | 28  => return to_unsigned(58192 / 8, FRAME_LENGTH_WIDTH); -- 7274
++        when others              => return to_unsigned(0, FRAME_LENGTH_WIDTH);         -- invalid
++      end case;
++    end if;
+   end function;
+ 
+-  constant ROM_DATA_WIDTH : integer := numbits(58_192 / TDATA_WIDTH);
++  -- Decode MODCOD index -> constellation
++  function decode_constellation (
++    constant modcod : integer range 0 to 31)
++    return constellation_t
++  is
++  begin
++    if    modcod >=  1 and modcod <= 11 then return mod_qpsk;
++    elsif modcod >= 12 and modcod <= 17 then return mod_8psk;
++    elsif modcod >= 18 and modcod <= 23 then return mod_16apsk;
++    elsif modcod >= 24 and modcod <= 28 then return mod_32apsk;
++    else                                     return unknown;
++    end if;
++  end function;
+ 
+-  -- Just a little helper to convert the frame length in bits to frame length in tdata
+-  -- words as a std logic vector
+-  function get_value_for_rom ( constant v : integer ) return std_logic_vector is
++  -- Decode MODCOD index -> code rate
++  function decode_code_rate (
++    constant modcod : integer range 0 to 31)
++    return code_rate_t
++  is
+   begin
+-    return std_logic_vector(to_unsigned(v / TDATA_WIDTH, ROM_DATA_WIDTH));
++    case modcod is
++      when  1                 => return C1_4;
++      when  2                 => return C1_3;
++      when  3                 => return C2_5;
++      when  4                 => return C1_2;
++      when  5 | 12            => return C3_5;
++      when  6 | 13 | 18       => return C2_3;
++      when  7 | 14 | 19 | 24  => return C3_4;
++      when  8 | 20 | 25       => return C4_5;
++      when  9 | 15 | 21 | 26  => return C5_6;
++      when 10 | 16 | 22 | 27  => return C8_9;
++      when 11 | 17 | 23 | 28  => return C9_10;
++      when others              => return unknown;
++    end case;
+   end function;
+ 
+-  constant FRAME_LENGTH_ROM : std_logic_array_t(0 to 20)(ROM_DATA_WIDTH - 1 downto 0) := (
+-    0  => get_value_for_rom(3_072),
+-    1  => get_value_for_rom(5_232),
+-    2  => get_value_for_rom(6_312),
+-    3  => get_value_for_rom(7_032),
+-    4  => get_value_for_rom(9_552),
+-    5  => get_value_for_rom(10_632),
+-    6  => get_value_for_rom(11_712),
+-    7  => get_value_for_rom(12_432),
+-    8  => get_value_for_rom(13_152),
+-    9  => get_value_for_rom(14_232),
+-    10 => get_value_for_rom(16_008),
+-    11 => get_value_for_rom(21_408),
+-    12 => get_value_for_rom(25_728),
+-    13 => get_value_for_rom(32_208),
+-    14 => get_value_for_rom(38_688),
+-    15 => get_value_for_rom(43_040),
+-    16 => get_value_for_rom(48_408),
+-    17 => get_value_for_rom(51_648),
+-    18 => get_value_for_rom(53_840),
+-    19 => get_value_for_rom(57_472),
+-    20 => get_value_for_rom(58_192)
+-  );
++  -------------
++  -- Signals --
++  -------------
++  signal state        : state_t;
++  signal frame_length : unsigned(FRAME_LENGTH_WIDTH - 1 downto 0);
++  signal length_count : unsigned(FRAME_LENGTH_WIDTH - 1 downto 0);
+ 
+-  signal rom_addr      : unsigned(numbits(FRAME_LENGTH_ROM'length) - 1 downto 0);
+-  signal frame_length  : std_logic_vector(ROM_DATA_WIDTH - 1 downto 0);
++  signal s_tready_i   : std_logic;
++  signal m_tvalid_i   : std_logic;
++  signal m_tlast_i    : std_logic;
+ 
+-  signal delay_output  : axi_stream_bus_t(tdata(TDATA_WIDTH - 1 downto 0), tuser(TUSER_WIDTH - 1 downto 0));
+-  signal slicer_output : axi_stream_bus_t(tdata(TDATA_WIDTH - 1 downto 0), tuser(TUSER_WIDTH - 1 downto 0));
++  signal cfg_frame_type_r    : frame_type_t;
++  signal cfg_constellation_r : constellation_t;
++  signal cfg_code_rate_r     : code_rate_t;
++  signal cfg_pilots_r        : std_logic;
+ 
+ begin
+ 
+-  -------------------
+-  -- Port mappings --
+-  -------------------
+-  rom_addr <= to_unsigned(get_rom_addr(s_frame_type, s_code_rate), numbits(FRAME_LENGTH_ROM'length));
+-
+-  -- The ROM with the coefficients from the spec
+-  rom_u : entity fpga_cores.rom_inference
+-    generic map (
+-      ROM_DATA     => FRAME_LENGTH_ROM,
+-      ROM_TYPE     => auto,
+-      OUTPUT_DELAY => 1)
+-    port map (
+-      clk    => clk,
+-      clken  => '1',
+-      addr   => std_logic_vector(rom_addr),
+-      rddata => frame_length);
+-
+-  -- Delay the incoming AXI stream to match the ROM latency
+-  delay_block : block
+-    signal s_tdata_agg : std_logic_vector(TDATA_WIDTH + TUSER_WIDTH downto 0);
+-    signal m_tdata_agg : std_logic_vector(TDATA_WIDTH + TUSER_WIDTH downto 0);
++  -- synthesis translate_off
++  assert TDATA_WIDTH = 8
++    report "axi_bbframe_length_enforcer: TDATA_WIDTH must be 8 for SYNC detection"
++    severity failure;
++
++  assert TUSER_WIDTH = ENCODED_CONFIG_WIDTH
++    report "TUSER_WIDTH must equal ENCODED_CONFIG_WIDTH ("
++           & integer'image(ENCODED_CONFIG_WIDTH) & ")"
++    severity failure;
++  -- synthesis translate_on
++
++  ------------------------------
++  -- Asynchronous assignments --
++  ------------------------------
++
++  -- In WAIT_SYNC / READ_MODCOD we consume the header bytes without
++  -- producing output, so s_tready is unconditionally high.
++  -- In FRAME_DATA we are a simple pass-through.
++  s_tready_i <= '1'      when state = WAIT_SYNC   else
++                '1'      when state = READ_MODCOD  else
++                m_tready;
++
++  m_tvalid_i <= s_tvalid when state = FRAME_DATA   else '0';
++
++  m_tlast_i  <= '1'      when state = FRAME_DATA
++                              and length_count = frame_length - 1
++                          else '0';
++
++  -- Port wiring
++  s_tready <= s_tready_i;
++  m_tvalid <= m_tvalid_i;
++  m_tdata  <= s_tdata when state = FRAME_DATA else (others => '0');
++  m_tlast  <= m_tlast_i when m_tvalid_i = '1' else '0';
++
++  -- Encode the decoded configuration into the tid sideband so that every
++  -- downstream stage (BB scrambler, BCH, LDPC ...) can extract MODCOD.
++  m_tuser <= encode((frame_type    => cfg_frame_type_r,
++                     constellation => cfg_constellation_r,
++                     code_rate     => cfg_code_rate_r,
++                     pilots        => cfg_pilots_r));
++
++  ---------------
++  -- Processes --
++  ---------------
++  fsm_p : process(clk, rst)
++    variable v_modcod       : integer range 0 to 31;
++    variable v_frame_length : unsigned(FRAME_LENGTH_WIDTH - 1 downto 0);
+   begin
+-    s_tdata_agg <= s_tlast & s_tuser & s_tdata;
+-
+-    delay_output.tlast <= m_tdata_agg(TDATA_WIDTH + TUSER_WIDTH);
+-    delay_output.tuser <= m_tdata_agg(TUSER_WIDTH + TDATA_WIDTH - 1 downto TDATA_WIDTH);
+-    delay_output.tdata <= m_tdata_agg(TDATA_WIDTH - 1 downto 0);
+-
+-    delay_u : entity fpga_cores.axi_stream_delay
+-      generic map (
+-        DELAY_CYCLES => 1,
+-        TDATA_WIDTH  => TDATA_WIDTH + TUSER_WIDTH + 1)
+-      port map (
+-        -- Usual ports
+-        clk     => clk,
+-        rst     => rst,
+-
+-        -- AXI slave input
+-        s_tvalid => s_tvalid,
+-        s_tready => s_tready,
+-        s_tdata  => s_tdata_agg,
+-
+-        -- AXI master output
+-        m_tvalid => delay_output.tvalid,
+-        m_tready => delay_output.tready,
+-        m_tdata  => m_tdata_agg);
+-  end block;
+-
+-  -- Slicer and padder insert no latency, so we can extract tuser right after the
+-  -- axi_stream_delay
+-  m_tuser <= delay_output.tuser;
+-
+-  -- Trim bigger frames first
+-  slicer_u : entity fpga_cores.axi_stream_frame_slicer
+-    generic map (
+-      FRAME_LENGTH_WIDTH => ROM_DATA_WIDTH,
+-      TDATA_WIDTH        => TDATA_WIDTH)
+-    port map (
+-      -- Usual ports
+-      clk          => clk,
+-      rst          => rst,
+-
+-      frame_length => frame_length,
+-
+-      -- Input stream
+-      s_tvalid     => delay_output.tvalid,
+-      s_tready     => delay_output.tready,
+-      s_tdata      => delay_output.tdata,
+-      s_tlast      => delay_output.tlast,
+-
+-      -- Output stream
+-      m_tvalid     => slicer_output.tvalid,
+-      m_tready     => slicer_output.tready,
+-      m_tdata      => slicer_output.tdata,
+-      m_tlast      => slicer_output.tlast);
+-
+-  -- Pad frames after slicing
+-  padder_u : entity fpga_cores.axi_stream_frame_padder
+-    generic map (
+-      FRAME_LENGTH_WIDTH => ROM_DATA_WIDTH,
+-      TDATA_WIDTH        => TDATA_WIDTH)
+-    port map (
+-      -- Usual ports
+-      clk          => clk,
+-      rst          => rst,
+-
+-      frame_length => frame_length,
+-
+-      -- Input stream
+-      s_tvalid     => slicer_output.tvalid,
+-      s_tready     => slicer_output.tready,
+-      s_tdata      => slicer_output.tdata,
+-      s_tlast      => slicer_output.tlast,
+-
+-      -- Output stream
+-      m_tvalid     => m_tvalid,
+-      m_tready     => m_tready,
+-      m_tdata      => m_tdata,
+-      m_tlast      => m_tlast);
++    if rst = '1' then
++      state              <= WAIT_SYNC;
++      length_count       <= (others => '0');
++      frame_length       <= (others => '0');
++      cfg_frame_type_r   <= unknown;
++      cfg_constellation_r<= unknown;
++      cfg_code_rate_r    <= unknown;
++      cfg_pilots_r       <= '0';
++
++    elsif rising_edge(clk) then
++      case state is
++        -- ---------------------------------------------------------------
++        -- Consume bytes until the SYNC marker (0xB8) appears
++        -- ---------------------------------------------------------------
++        when WAIT_SYNC =>
++          if s_tvalid = '1' then
++            if s_tdata = SYNC_BYTE then
++              state <= READ_MODCOD;
++            end if;
++            -- else: padding byte - silently consumed
++          end if;
++
++        -- ---------------------------------------------------------------
++        -- The byte following SYNC carries MODCOD + pilots + frame type.
++        -- Decode everything combinationally and latch the results.
++        -- ---------------------------------------------------------------
++        when READ_MODCOD =>
++          if s_tvalid = '1' then
++            v_modcod       := to_integer(unsigned(s_tdata(4 downto 0)));
++            v_frame_length := decode_frame_length(s_tdata);
++
++            -- Latch decoded configuration
++            cfg_pilots_r        <= s_tdata(5);
++            cfg_constellation_r <= decode_constellation(v_modcod);
++            cfg_code_rate_r     <= decode_code_rate(v_modcod);
++
++            if s_tdata(6) = '1' then
++              cfg_frame_type_r <= fecframe_short;
++            else
++              cfg_frame_type_r <= fecframe_normal;
++            end if;
++
++            frame_length <= v_frame_length;
++            length_count <= (others => '0');
++
++            if v_frame_length /= 0 then
++              state <= FRAME_DATA;
++            else
++              -- Invalid MODCOD / frame-type combination - resync
++              state <= WAIT_SYNC;
++
++              -- synthesis translate_off
++              report "axi_bbframe_length_enforcer: invalid MODCOD - resyncing"
++                severity warning;
++              -- synthesis translate_on
++            end if;
++          end if;
++
++        -- ---------------------------------------------------------------
++        -- Pass frame data through, counting bytes.  Assert m_tlast on
++        -- the final byte then return to WAIT_SYNC.
++        -- ---------------------------------------------------------------
++        when FRAME_DATA =>
++          if m_tvalid_i = '1' and m_tready = '1' then
++            if m_tlast_i = '1' then
++              length_count <= (others => '0');
++              state        <= WAIT_SYNC;
++            else
++              length_count <= length_count + 1;
++            end if;
++          end if;
++
++      end case;
++    end if;
++  end process fsm_p;
+ 
+ end axi_bbframe_length_enforcer;
+diff --git a/rtl/dvbs2_encoder.vhd b/rtl/dvbs2_encoder.vhd
+index 037acff..d2c1ef7 100644
+--- a/rtl/dvbs2_encoder.vhd
++++ b/rtl/dvbs2_encoder.vhd
+@@ -33,6 +33,10 @@ use work.dvbs2_encoder_regs_pkg.all;
+ ------------------------
+ -- Entity declaration --
+ ------------------------
++-- NOTE: s_constellation, s_frame_type, s_code_rate, s_pilots have been removed.
++-- The MODCOD configuration is now decoded automatically from the SYNC (0xB8) +
++-- MODCOD header bytes embedded in the transport stream.  inline_config_adapter
++-- is no longer required upstream — feed raw transport data directly.
+ entity dvbs2_encoder is
+   generic (
+     INPUT_DATA_WIDTH : positive := 8; -- For ease of use only. Internally data will be always converted to 8 bits
+@@ -68,6 +72,9 @@ entity dvbs2_encoder is
+     s_axi_bresp     : out std_logic_vector(1 downto 0);
+ 
+     -- AXI input
++    -- NOTE: The config ports below are UNUSED — MODCOD is now decoded from
++    -- the SYNC + config bytes embedded in the transport stream.  The ports
++    -- are retained so that existing wrappers / block designs keep compiling.
+     s_constellation : in  constellation_t;
+     s_frame_type    : in  frame_type_t;
+     s_code_rate     : in  code_rate_t;
+@@ -113,6 +120,7 @@ architecture dvbs2_encoder of dvbs2_encoder is
+   -- Signals --
+   -------------
+   signal rst_n                    : std_logic;
++  -- tid is now only meaningful after the frame slicer; zeros before that point
+   signal s_tid                    : std_logic_vector(ENCODED_CONFIG_WIDTH - 1 downto 0);
+   signal m_tvalid_i               : std_logic;
+   signal m_tlast_i                : std_logic;
+@@ -158,28 +166,30 @@ begin
+   ---------------
+   -- Debugging --
+   ---------------
+-  dbg_frame_type <= "01" when s_frame_type = fecframe_short else
+-                    "10" when s_frame_type = fecframe_normal else
++  -- Debug signals are now derived from the tid produced by the frame slicer,
++  -- which carries the decoded MODCOD for the frame currently in flight.
++  dbg_frame_type <= "01" when decode_config_tuple(frame_resize.tid).frame_type = fecframe_short else
++                    "10" when decode_config_tuple(frame_resize.tid).frame_type = fecframe_normal else
+                     "00";
+ 
+ 
+-  dbg_constellation <= x"04" when s_constellation = mod_qpsk else
+-                       x"08" when s_constellation  = mod_8psk else
+-                       x"10" when s_constellation  = mod_16apsk else
+-                       x"20" when s_constellation  = mod_32apsk else
++  dbg_constellation <= x"04" when decode_config_tuple(frame_resize.tid).constellation = mod_qpsk else
++                       x"08" when decode_config_tuple(frame_resize.tid).constellation = mod_8psk else
++                       x"10" when decode_config_tuple(frame_resize.tid).constellation = mod_16apsk else
++                       x"20" when decode_config_tuple(frame_resize.tid).constellation = mod_32apsk else
+                        x"00";
+ 
+-  dbg_code_rate <= std_logic_vector(to_unsigned(14, 10)) when s_code_rate = C1_4 else
+-                   std_logic_vector(to_unsigned(13, 10)) when s_code_rate = C1_3 else
+-                   std_logic_vector(to_unsigned(25, 10)) when s_code_rate = C2_5 else
+-                   std_logic_vector(to_unsigned(12, 10)) when s_code_rate = C1_2 else
+-                   std_logic_vector(to_unsigned(35, 10)) when s_code_rate = C3_5 else
+-                   std_logic_vector(to_unsigned(23, 10)) when s_code_rate = C2_3 else
+-                   std_logic_vector(to_unsigned(34, 10)) when s_code_rate = C3_4 else
+-                   std_logic_vector(to_unsigned(45, 10)) when s_code_rate = C4_5 else
+-                   std_logic_vector(to_unsigned(56, 10)) when s_code_rate = C5_6 else
+-                   std_logic_vector(to_unsigned(89, 10)) when s_code_rate = C8_9 else
+-                   std_logic_vector(to_unsigned(910, 10)) when s_code_rate = C9_10 else
++  dbg_code_rate <= std_logic_vector(to_unsigned(14, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C1_4 else
++                   std_logic_vector(to_unsigned(13, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C1_3 else
++                   std_logic_vector(to_unsigned(25, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C2_5 else
++                   std_logic_vector(to_unsigned(12, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C1_2 else
++                   std_logic_vector(to_unsigned(35, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C3_5 else
++                   std_logic_vector(to_unsigned(23, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C2_3 else
++                   std_logic_vector(to_unsigned(34, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C3_4 else
++                   std_logic_vector(to_unsigned(45, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C4_5 else
++                   std_logic_vector(to_unsigned(56, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C5_6 else
++                   std_logic_vector(to_unsigned(89, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C8_9 else
++                   std_logic_vector(to_unsigned(910, 10)) when decode_config_tuple(frame_resize.tid).code_rate = C9_10 else
+                    (others => '0');
+ 
+   -------------------
+@@ -289,7 +299,14 @@ begin
+       m_tdata                    => width_conv_reg_dbg.tdata,
+       m_tid                      => width_conv_reg_dbg.tid);
+ 
+-  -- TODO: Add debug after resizing and plug it into the register map
++  ---------------------------------------------------------------------------
++  -- Frame slicer / enforcer
++  --
++  -- The new self‑synchronising enforcer detects the SYNC byte (0xB8) and
++  -- MODCOD in the data stream, looks up Kbch, slices the frame to that
++  -- length, and encodes the decoded configuration into m_tuser (= tid).
++  -- No external frame_type / code_rate inputs are needed any more.
++  ---------------------------------------------------------------------------
+   frame_resize_u : entity work.axi_bbframe_length_enforcer
+     generic map (
+       TDATA_WIDTH => 8,
+@@ -298,16 +315,12 @@ begin
+       -- Usual ports
+       clk          => clk,
+       rst          => rst,
+-
+-      s_frame_type => decode_config_tuple(width_conv_reg_dbg.tid).frame_type,
+-      s_code_rate  => decode_config_tuple(width_conv_reg_dbg.tid).code_rate,
+-
++      -- AXI input  (raw 8‑bit transport stream from width converter)
+       s_tvalid     => width_conv_reg_dbg.tvalid,
+       s_tlast      => width_conv_reg_dbg.tlast,
+       s_tready     => width_conv_reg_dbg.tready,
+       s_tdata      => width_conv_reg_dbg.tdata,
+-      s_tuser      => width_conv_reg_dbg.tid,
+-      -- AXI output
++      -- AXI output (clean frame data + encoded MODCOD on tid)
+       m_tready     => frame_resize.tready,
+       m_tvalid     => frame_resize.tvalid,
+       m_tlast      => frame_resize.tlast,
+@@ -928,10 +941,10 @@ begin
+   ------------------------------
+   rst_n <= not rst;
+ 
+-  s_tid <= encode((frame_type    => s_frame_type,
+-                   constellation => s_constellation,
+-                   code_rate     => s_code_rate,
+-                   pilots        => s_pilots));
++  -- tid is meaningless before the frame slicer — just pass zeros through the
++  -- width converter and its debug wrapper.  The real MODCOD‑derived tid is
++  -- produced by frame_resize_u (axi_bbframe_length_enforcer → slicer).
++  s_tid <= (others => '0');
+ 
+   m_tlast  <= m_tlast_i and m_tvalid_i;
+   s_tready <= s_tready_i;
+@@ -943,6 +956,11 @@ begin
+   ---------------
+   -- Processes --
+   ---------------
++  -- NOTE: The frames_in_transit counter below relies on s_tlast marking the
++  -- end of each input frame.  With raw transport data the upstream source
++  -- may not assert s_tlast at frame boundaries (frames are now delimited by
++  -- the SYNC byte).  If accurate frame‑in‑transit tracking is needed,
++  -- consider adding a "new‑frame" strobe output to the slicer.
+   status_block : block
+     signal s_first_word       : std_logic;
+     signal frame_in_transit_i : unsigned(7 downto 0);

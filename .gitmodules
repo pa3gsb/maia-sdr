@@ -4,3 +4,6 @@
 [submodule "maia-hdl/XilinxUnisimLibrary"]
 	path = maia-hdl/XilinxUnisimLibrary
 	url = https://github.com/Xilinx/XilinxUnisimLibrary/
+[submodule "maia-hdl/dvb_fpga"]
+	path = maia-hdl/dvb_fpga
+	url = https://github.com/OpenResearchInstitute/dvb_fpga
