@@ -13,6 +13,7 @@ if [ "$BOARD_NAME" = "libre" ]; then
     ./overclock.sh 50 950 600
     ./overclock.sh 50 1100 750
 else
+    ./overclock.sh 33 495 396
     ./overclock.sh 33 950 600
     ./overclock.sh 33 1100 750
 fi
