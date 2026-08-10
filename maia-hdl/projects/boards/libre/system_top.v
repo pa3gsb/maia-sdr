@@ -109,15 +109,25 @@ module system_top (
 
   // instantiations
 
-  ad_iobuf #(.DATA_WIDTH(14)) i_iobuf (
-    .dio_t (gpio_t[13:0]),
-    .dio_i (gpio_o[13:0]),
-    .dio_o (gpio_i[13:0]),
-    .dio_p ({ gpio_resetb,        // 13:13
+  ad_iobuf #(
+    .DATA_WIDTH(25)
+  ) i_iobuf (
+    .dio_t ({gpio_t[25:22],gpio_t[13:0]}),
+    .dio_i ({gpio_o[25:22],gpio_o[13:0]}),
+    .dio_o ({gpio_i[25:22],gpio_i[13:0]}),
+    .dio_p ({ 
+              gpio_ext3,//25
+              gpio_ext2,//24
+              gpio_ext1,//23
+              gpio_ext0,//22
+              
+              
+              gpio_resetb,        // 13:13
               gpio_en_agc,        // 12:12
               gpio_ctl,           // 11: 8
               gpio_status}));     //  7: 0
 
+ 
   assign gpio_i[16:14] = gpio_o[16:14];
   assign CLKIN_10MHz_REQ = 1'b1;
   assign eth_rst_n = 1'b1;

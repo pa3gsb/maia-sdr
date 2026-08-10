@@ -4,6 +4,7 @@ close_bd_design system
 set_property ip_repo_paths [list \
   "$::tezuka_hdl_dir/common/antsdr-hdl" \
   "$::tezuka_hdl_dir/common/libresdr-hdl" \
+  "$::tezuka_hdl_dir/common/libre-vctcxo-lock" \
   "$::tezuka_hdl_dir/../ip" \
   "$::tezuka_hdl_dir/../dvb_fpga" \
   "$ad_hdl_dir/library" \

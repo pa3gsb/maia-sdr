@@ -61,7 +61,6 @@ set_property -dict {PACKAGE_PIN U13 IOSTANDARD LVCMOS25} [get_ports {gpio_status
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS25} [get_ports {gpio_status[7]}]
 
 set_property -dict {PACKAGE_PIN T10 IOSTANDARD LVCMOS25} [get_ports {gpio_ctl[0]}]
-# CHECK AS schematic says EXT_GPIO G15 K14 J14 N15 
 set_property -dict {PACKAGE_PIN Y11 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[1]}]
 set_property -dict {PACKAGE_PIN V10 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[2]}]
 set_property -dict {PACKAGE_PIN U9 IOSTANDARD LVCMOS33} [get_ports {gpio_ctl[3]}]
@@ -220,6 +219,13 @@ set_property PACKAGE_PIN T2 [get_ports {ddr_dqs_n[2]}]
 set_property PACKAGE_PIN R2 [get_ports {ddr_dqs_p[2]}]
 set_property PACKAGE_PIN W4 [get_ports {ddr_dqs_n[3]}]
 set_property PACKAGE_PIN W5 [get_ports {ddr_dqs_p[3]}]
+
+# EXT GPIO
+set_property  -dict {PACKAGE_PIN  G15  IOSTANDARD LVCMOS33} [get_ports gpio_ext0]
+set_property  -dict {PACKAGE_PIN  K14  IOSTANDARD LVCMOS33} [get_ports gpio_ext1]
+set_property  -dict {PACKAGE_PIN  J14  IOSTANDARD LVCMOS33} [get_ports gpio_ext2]
+set_property  -dict {PACKAGE_PIN  N15  IOSTANDARD LVCMOS33} [get_ports gpio_ext3]
+
 
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
