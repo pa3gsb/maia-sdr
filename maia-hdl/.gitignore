@@ -13,6 +13,9 @@
 xgui
 /ip/*/component.xml
 !/projects/*/*.v
+!/projects/boards/*/*.v
+!/projects/common/*.v
+!/projects/common/*/*.v
 !/test_cocotb/*/*.v
 /test_cocotb/*/dut.v
 /test_cocotb/*/results.xml
@@ -21,3 +24,4 @@ xgui
 *.vcd
 __pycache__
 /dist
+/adi-hdl/*
