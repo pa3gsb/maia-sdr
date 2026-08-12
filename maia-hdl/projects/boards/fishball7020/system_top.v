@@ -121,16 +121,14 @@ module system_top (
 ad_iobuf #(
     .DATA_WIDTH(26)
   ) i_iobuf (
-    .dio_t ({gpio_t[26:22],gpio_t[13:0]}),
-    .dio_i ({gpio_o[26:22],gpio_o[13:0]}),
-    .dio_o ({gpio_i[26:22],gpio_i[13:0]}),
+    .dio_t ({gpio_t[26:24],gpio_t[13:0]}),
+    .dio_i ({gpio_o[26:24],gpio_o[13:0]}),
+    .dio_o ({gpio_i[26:24],gpio_i[13:0]}),
     .dio_p ({ ptt_io,//26
               pad_16,//25
               pad_14,//24
-              pad_10,//23
-              pad_8,//22
-              
-              
+              // pad_10 (23), pad_8 (22) moved to qspi_csn_o / qspi_sdi_i
+
               gpio_resetb,        // 13:13
               gpio_en_agc,        // 12:12
               gpio_ctl,           // 11: 8
@@ -180,7 +178,16 @@ ad_iobuf #(
     .spi0_sdi_i (spi_miso),
     .spi0_sdo_i (1'b0),
     .spi0_sdo_o (spi_mosi),
-    
+
+    // axi_quad_spi (fishball7020 only): sclk/mosi/miso/ss = pad_4/pad_6/pad_8/pad_10
+    .qspi_clk_i (1'b0),
+    .qspi_clk_o (pad_4),
+    .qspi_csn_i (1'b1),
+    .qspi_csn_o (pad_10),
+    .qspi_sdo_i (1'b0),
+    .qspi_sdo_o (pad_6),
+    .qspi_sdi_i (pad_8),
+
     .tx_clk_out_p (tx_clk_out_p),
     .tx_clk_out_n (tx_clk_out_n),
     .tx_data_out_p (tx_data_out_p),
@@ -194,8 +201,6 @@ ad_iobuf #(
     .clk_10(pad_7),
     .phase(pad_9),
     .serial_rx(pad_13),
-    //.sync_out(pad_4),
-    //.sync_in(pad_6),
     .lock(pad_12)
     
   );
