@@ -121,13 +121,14 @@ module system_top (
 ad_iobuf #(
     .DATA_WIDTH(26)
   ) i_iobuf (
-    .dio_t ({gpio_t[26:24],gpio_t[13:0]}),
-    .dio_i ({gpio_o[26:24],gpio_o[13:0]}),
-    .dio_o ({gpio_i[26:24],gpio_i[13:0]}),
+    .dio_t ({gpio_t[26:22],gpio_t[13:0]}),
+    .dio_i ({gpio_o[26:22],gpio_o[13:0]}),
+    .dio_o ({gpio_i[26:22],gpio_i[13:0]}),
     .dio_p ({ ptt_io,//26
               pad_16,//25
               pad_14,//24
-              // pad_10 (23), pad_8 (22) moved to qspi_csn_o / qspi_sdi_i
+              pad_10,//23  emio gpio: display RESET, driven from linux
+              pad_8,//22   emio gpio: display DC (data/command), driven from linux
 
               gpio_resetb,        // 13:13
               gpio_en_agc,        // 12:12
@@ -179,14 +180,15 @@ ad_iobuf #(
     .spi0_sdo_i (1'b0),
     .spi0_sdo_o (spi_mosi),
 
-    // axi_quad_spi (fishball7020 only): sclk/mosi/miso/ss = pad_4/pad_6/pad_8/pad_10
+    // axi_quad_spi (fishball7020 only): sclk/mosi = pad_4/pad_6.
+    // No MISO, no hardware SS -- write-only slave; csn/miso left unused.
     .qspi_clk_i (1'b0),
     .qspi_clk_o (pad_4),
     .qspi_csn_i (1'b1),
-    .qspi_csn_o (pad_10),
+    .qspi_csn_o (),
     .qspi_sdo_i (1'b0),
     .qspi_sdo_o (pad_6),
-    .qspi_sdi_i (pad_8),
+    .qspi_sdi_i (1'b0),
 
     .tx_clk_out_p (tx_clk_out_p),
     .tx_clk_out_n (tx_clk_out_n),
