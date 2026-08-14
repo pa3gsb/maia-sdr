@@ -70,7 +70,9 @@ set_property  -dict {PACKAGE_PIN  H17  IOSTANDARD LVCMOS25} [get_ports pad_14]
 set_property  -dict {PACKAGE_PIN  J18  IOSTANDARD LVCMOS25} [get_ports pad_8]
 set_property  -dict {PACKAGE_PIN  H18  IOSTANDARD LVCMOS25} [get_ports pad_10]
 set_property  -dict {PACKAGE_PIN  G19  IOSTANDARD LVCMOS25} [get_ports pad_4]
-set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports pad_6]
+# set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25 PULLTYPE PULLDOWN} [get_ports pad_6]
+# Fixme : maybe pulldown used for sync
+set_property  -dict {PACKAGE_PIN  G20  IOSTANDARD LVCMOS25 } [get_ports pad_6]
 set_property  -dict {PACKAGE_PIN  L14  IOSTANDARD LVCMOS25} [get_ports pad_16]
 set_property  -dict {PACKAGE_PIN  L15  IOSTANDARD LVCMOS25} [get_ports pad_18]
 
