@@ -53,6 +53,7 @@ switch -glob -- $project_name {
         set dvb "dvb"
         set vctcxo "vctcxo"
         set txfir "txfir"
+        set spiquad "spiquad"
         #set sync "sync"
         #set iqburst "iqburst"
 
@@ -100,3 +101,4 @@ if {[info exists txfir]} { source $::tezuka_hdl_dir/common/txfir.tcl }
 if {[info exists sync]} { source $::tezuka_hdl_dir/common/sync.tcl }
 if {[info exists iqburst]} { source $::tezuka_hdl_dir/common/iqburst.tcl }
 if {[info exists dvb]} { source $::tezuka_hdl_dir/common/dvb.tcl }
+if {[info exists spiquad]} { source $::tezuka_hdl_dir/common/spiquad.tcl }
