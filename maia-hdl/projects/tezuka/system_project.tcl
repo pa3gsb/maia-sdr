@@ -47,6 +47,9 @@ switch -glob -- $project_name {
     "plutoskyr2" {
         set p_device "xc7z020clg484-2"
     }
+    "pciesdr7010" {
+        set p_device "xc7z010clg400-1"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1

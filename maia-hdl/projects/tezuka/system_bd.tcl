@@ -68,9 +68,12 @@ switch -glob -- $project_name {
     }
     "plutoskyr2" {
        set lvds "lvds"
-       set txfir "txfir" 
+       set txfir "txfir"
        set dac_dds "dac_dds"
        set dvb "dvb"
+    }
+    "pciesdr7010" {
+        set lvds "lvds"
     }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
