@@ -75,6 +75,9 @@ switch -glob -- $project_name {
     "pciesdr7010" {
         set lvds "lvds"
     }
+    "opensdrlab7010mini" {
+        set lvds "lvds"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1

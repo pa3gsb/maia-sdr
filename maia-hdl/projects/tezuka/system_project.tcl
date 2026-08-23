@@ -50,6 +50,9 @@ switch -glob -- $project_name {
     "pciesdr7010" {
         set p_device "xc7z010clg400-1"
     }
+    "opensdrlab7010mini" {
+        set p_device "xc7z010clg400-1"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1
