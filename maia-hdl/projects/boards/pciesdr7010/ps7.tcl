@@ -50,6 +50,22 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_MIO_53_PULLUP {enabled}
 # Board-delay/DQS values copied from fishball7010 as a starting point; this
 # board has different DDR trace lengths so these may need re-tuning if DDR
 # training is unstable (see doc/templateboard.md sequencing step 3).
+#
+# 2026-08-22: memtester showed lane-0 (bits[15:0]) write/read-capture
+# corruption, addresses varying run to run (timing marginality, not a dead
+# cell) -- see doc/crashnano.md "Conclusion" section. Original default was
+# 0.048 (same as DELAY_1, copied boilerplate -- almost every board in this
+# repo still has the untouched 0.048/0.050 default, only nano and
+# signalsdrpro have real per-board values).
+# 2026-08-23: candidate A (DQS_0=0.025, nano's value), candidate B
+# (DQS_0=0.095, signalsdrpro's value), and candidate C (BOARD_DELAY0=0.202,
+# signalsdrpro's value) were all tested -- none fixed it. See
+# doc/crashnano.md "DDR retune sweep" / "Conclusion" -- treated as a
+# hardware/PCB defect on this board (confirmed independent of firmware:
+# reproduces identically on the manufacturer's own shipped image), not
+# fixable via these seed values. Reverted to the original defaults below;
+# do not re-apply candidates A/B/C without new evidence (e.g. real DDR
+# margin measurement) that they'd help.
 
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41K256M16 RE-125}
 ad_ip_parameter sys_ps7 CONFIG.PCW_UIPARAM_DDR_BUS_WIDTH {32 Bit}
