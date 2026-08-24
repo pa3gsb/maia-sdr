@@ -47,13 +47,13 @@ switch -glob -- $project_name {
             }     
      
     "fishball7020" {
-        set lvds "lvds" 
+        set lvds "lvds"
         set uartlite "uartlite"
         #set dac_dds "dac_dds"
         set dvb "dvb"
         set vctcxo "vctcxo"
         set txfir "txfir"
-        set spiquad "spiquad"
+        set i2c1emio "i2c1emio"
         #set sync "sync"
         #set iqburst "iqburst"
 
@@ -108,3 +108,4 @@ if {[info exists sync]} { source $::tezuka_hdl_dir/common/sync.tcl }
 if {[info exists iqburst]} { source $::tezuka_hdl_dir/common/iqburst.tcl }
 if {[info exists dvb]} { source $::tezuka_hdl_dir/common/dvb.tcl }
 if {[info exists spiquad]} { source $::tezuka_hdl_dir/common/spiquad.tcl }
+if {[info exists i2c1emio]} { source $::tezuka_hdl_dir/common/i2c1emio.tcl }

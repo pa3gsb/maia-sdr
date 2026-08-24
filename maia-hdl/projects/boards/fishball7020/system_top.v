@@ -113,6 +113,13 @@ module system_top (
   wire    [63:0]  gpio_o;
   wire    [63:0]  gpio_t;
 
+  wire            i2c1_scl_o;
+  wire            i2c1_scl_i;
+  wire            i2c1_scl_t;
+  wire            i2c1_sda_o;
+  wire            i2c1_sda_i;
+  wire            i2c1_sda_t;
+
   // instantiations
   assign gpio_i[16:14] = gpio_o[16:14]; //Reserved
   assign gpio_i[63:31] = gpio_o[63:31];
@@ -134,6 +141,15 @@ ad_iobuf #(
               gpio_en_agc,        // 12:12
               gpio_ctl,           // 11: 8
               gpio_status}));     //  7: 0
+
+  // PS7 I2C1 EMIO, open-drain: scl/sda = pad_4/pad_6
+  ad_iobuf #(
+    .DATA_WIDTH(2)
+  ) i_i2c1_iobuf (
+    .dio_t ({i2c1_scl_t, i2c1_sda_t}),
+    .dio_i ({i2c1_scl_o, i2c1_sda_o}),
+    .dio_o ({i2c1_scl_i, i2c1_sda_i}),
+    .dio_p ({pad_4,      pad_6}));
 
 
 
@@ -180,15 +196,14 @@ ad_iobuf #(
     .spi0_sdo_i (1'b0),
     .spi0_sdo_o (spi_mosi),
 
-    // axi_quad_spi (fishball7020 only): sclk/mosi = pad_4/pad_6.
-    // No MISO, no hardware SS -- write-only slave; csn/miso left unused.
-    .qspi_clk_i (1'b0),
-    .qspi_clk_o (pad_4),
-    .qspi_csn_i (1'b1),
-    .qspi_csn_o (),
-    .qspi_sdo_i (1'b0),
-    .qspi_sdo_o (pad_6),
-    .qspi_sdi_i (1'b0),
+    // PS7 I2C1 via EMIO (fishball7020 only): scl/sda = pad_4/pad_6,
+    // open-drain via i_i2c1_iobuf below.
+    .i2c1_scl_o (i2c1_scl_o),
+    .i2c1_scl_i (i2c1_scl_i),
+    .i2c1_scl_t (i2c1_scl_t),
+    .i2c1_sda_o (i2c1_sda_o),
+    .i2c1_sda_i (i2c1_sda_i),
+    .i2c1_sda_t (i2c1_sda_t),
 
     .tx_clk_out_p (tx_clk_out_p),
     .tx_clk_out_n (tx_clk_out_n),
