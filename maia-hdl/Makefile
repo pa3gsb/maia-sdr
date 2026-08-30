@@ -15,3 +15,6 @@ patch-dvb_fpga:
 	@git -C dvb_fpga apply --reverse --check ../patches/dvb_fpga/padding_ok.patch 2>/dev/null && \
 	  echo "dvb_fpga: padding_ok.patch already applied" || \
 	  git -C dvb_fpga apply ../patches/dvb_fpga/padding_ok.patch
+	@git -C dvb_fpga apply --reverse --check ../patches/dvb_fpga/remove_inline_config_adapter.patch 2>/dev/null && \
+	  echo "dvb_fpga: remove_inline_config_adapter.patch already applied" || \
+	  git -C dvb_fpga apply ../patches/dvb_fpga/remove_inline_config_adapter.patch

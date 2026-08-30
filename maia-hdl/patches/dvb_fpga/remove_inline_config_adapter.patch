@@ -1,0 +1,84 @@
+diff --git a/build/vivado/dvbs2_encoder_wrapper.vhd b/build/vivado/dvbs2_encoder_wrapper.vhd
+index 80f5fc6..2793531 100644
+--- a/build/vivado/dvbs2_encoder_wrapper.vhd
++++ b/build/vivado/dvbs2_encoder_wrapper.vhd
+@@ -135,43 +135,18 @@ architecture rtl of dvbs2_encoder_wrapper is
+ 
+   signal rst                   : std_logic;
+ 
+-  signal encoder_frame_type    : frame_type_t;
+-  signal encoder_constellation : constellation_t;
+-  signal encoder_code_rate     : code_rate_t;
+-  signal encoder_pilots        : std_logic;
+-  signal encoder_tvalid        : std_logic;
+-  signal encoder_tready        : std_logic;
+-  signal encoder_tlast         : std_logic;
+-  signal encoder_tdata         : std_logic_vector(15 downto 0);
+-  signal encoder_tkeep         : std_logic_vector(1 downto 0);
+-
+ begin
+ 
+-  inline_config_adapter : entity work.inline_config_adapter
+-    generic map ( INPUT_DATA_WIDTH => INPUT_DATA_WIDTH )
+-    port map (
+-      clk             => clk,
+-      rst             => rst,
+-      -- Input data where the first 2-byte word is interpreted as in-band signalling
+-      s_tvalid        => s_axis_tvalid,
+-      s_tready        => s_axis_tready,
+-      s_tlast         => s_axis_tlast,
+-      s_tkeep         => s_axis_tkeep,
+-      s_tdata         => s_axis_tdata,
+-      -- Output data
+-      m_frame_type    => encoder_frame_type,
+-      m_constellation => encoder_constellation,
+-      m_code_rate     => encoder_code_rate,
+-      m_pilots        => encoder_pilots,
+-      m_tvalid        => encoder_tvalid,
+-      m_tready        => encoder_tready,
+-      m_tlast         => encoder_tlast,
+-      m_tdata         => encoder_tdata,
+-      m_tkeep         => encoder_tkeep);
+-
++  -- inline_config_adapter removed: dvbs2_encoder now decodes MODCOD itself
++  -- from the in-band SYNC (0xB8) + config byte embedded in the transport
++  -- data by pluto_stream (see rtl/axi_bbframe_length_enforcer.vhd). Feeding
++  -- s_axis straight into dvbs2_encoder lets its own internal width converter
++  -- (force_8_bit_u, generic-width -> 8 bit) do the byte-serialisation that
++  -- inline_config_adapter used to also provide, without stripping the
++  -- header the self-synchronising enforcer needs to see.
+   encoder_u : entity work.dvbs2_encoder
+     generic map (
+-      INPUT_DATA_WIDTH => 16,
++      INPUT_DATA_WIDTH => INPUT_DATA_WIDTH,
+       IQ_WIDTH         => IQ_WIDTH
+     )
+     port map (
+@@ -203,16 +178,17 @@ begin
+       s_axi_bready    => s_axi_bready,
+       s_axi_bresp     => s_axi_bresp,
+ 
+-      -- AXI input
+-      s_constellation => encoder_constellation,
+-      s_frame_type    => encoder_frame_type,
+-      s_code_rate     => encoder_code_rate,
+-      s_pilots        => encoder_pilots,
+-      s_tvalid        => encoder_tvalid,
+-      s_tdata         => encoder_tdata,
+-      s_tkeep         => encoder_tkeep,
+-      s_tlast         => encoder_tlast,
+-      s_tready        => encoder_tready,
++      -- AXI input -- config ports are dead in the self-synchronising
++      -- encoder (kept only for interface compatibility); tie to unknown.
++      s_constellation => unknown,
++      s_frame_type    => unknown,
++      s_code_rate     => unknown,
++      s_pilots        => '0',
++      s_tvalid        => s_axis_tvalid,
++      s_tdata         => s_axis_tdata,
++      s_tkeep         => s_axis_tkeep,
++      s_tlast         => s_axis_tlast,
++      s_tready        => s_axis_tready,
+       -- AXI output
+       m_tready        => m_axis_tready,
+       m_tvalid        => m_axis_tvalid,
