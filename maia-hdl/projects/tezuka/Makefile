@@ -36,7 +36,7 @@ clean:
 	@echo "Local project cleaned. IP cores preserved."
 
 install:
-	bash -c "mkdir -p $(DEST) && cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/tezuka.xsa"
+	bash -c "mkdir -p $(DEST) && cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/$(notdir $(CURDIR)).xsa"
 # FSBL will be done with embeddedsw later by buildroot 	
 #	bash -c "rm -rf build"
 #	bash -c "xsct create_fsbl_project.tcl $(PROJECT_NAME)"
