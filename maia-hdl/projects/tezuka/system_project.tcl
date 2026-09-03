@@ -36,10 +36,10 @@ switch -glob -- $project_name {
         set p_device "xc7z010clg400-1"
     }
     "fishball7020" {
-        set p_device "xc7z020clg400-1"
+        set p_device "xc7z020clg400-2"
     }
     "signalsdrpro" {
-        set p_device "xc7z020clg400-1"
+        set p_device "xc7z020clg400-2"
     }
     "nano" {
         set p_device "xc7z010clg400-1"
