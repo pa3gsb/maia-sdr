@@ -26,7 +26,14 @@ ad_ip_instance xlslice interp8_slice
 ad_ip_parameter interp8_slice CONFIG.DIN_FROM 0
 ad_ip_parameter interp8_slice CONFIG.DIN_TO 0
 ad_connect axi_ad9361/up_dac_gpio_out interp8_slice/Din
-ad_connect  tx_fir_interpolator/active interp8_slice/Dout
+
+if {[info exists txfir_force_bypass]} {
+    # LibreSDR: FIR always off / bypass
+    ad_connect tx_fir_interpolator/active GND
+} else {
+    # Other boards: keep existing behaviour
+    ad_connect tx_fir_interpolator/active interp8_slice/Dout
+}
 
 
 
@@ -80,7 +87,14 @@ ad_ip_instance util_vector_logic dac_fifo_valid_or [list C_OPERATION {or} C_SIZE
 # Op1 reçoit le valid de l'unpacker (utilisé en mode bypass)
 ad_connect util_ad9361_dac_upack/fifo_rd_valid dac_fifo_valid_or/Op1
 # Op2 reçoit le signal de contrôle 'active' (interp8_slice/Dout) pour forcer le valid à 1 en mode FIR
-ad_connect interp8_slice/Dout dac_fifo_valid_or/Op2
+
+if {[info exists txfir_force_bypass]} {
+    # FIR is forced off
+    ad_connect GND dac_fifo_valid_or/Op2
+} else {
+    ad_connect interp8_slice/Dout dac_fifo_valid_or/Op2
+}
+
 
 # 4. Connexion de la sortie de la porte OR vers les entrées de validation du FIFO
 ad_connect dac_fifo_valid_or/Res axi_ad9361_dac_fifo/din_valid_in_0

@@ -30,6 +30,11 @@ switch -glob -- $project_name {
         set vctcxo "vctcxo"
         set xo_corrector "xo_corrector"
         set txfir "txfir"
+		
+# LibreSDR test: FPGA TX x8 interpolator bypass always.
+# De AD9361 executes in case of 576 kS/s the FIR x4.
+		set txfir_force_bypass 1
+		
         set dac_dds "dac_dds"
         set dvb "dvb"
     }
